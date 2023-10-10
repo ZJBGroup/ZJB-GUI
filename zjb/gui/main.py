@@ -1,9 +1,17 @@
 # coding:utf-8
 import sys
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QSplitter
+from PyQt5.QtCore import QPoint, Qt
+from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QSizePolicy,
+    QSplitter,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets import (
     Action,
     FluentIcon,
@@ -11,14 +19,15 @@ from qfluentwidgets import (
     MSFluentTitleBar,
     NavigationItemPosition,
     RoundMenu,
-    Theme,
+    ScrollArea,
+    TabBar,
+    TabCloseButtonDisplayMode,
     TransparentDropDownPushButton,
-    setTheme,
 )
-
 from zjb.gui._rc import find_resource_file
+from zjb.gui.pages.base_page import BasePage
 from zjb.gui.pages.setting_page import SettingInterface
-from zjb.gui.pages.win_page import WinInterface
+from zjb.gui.pages.welcome_page import WelcomePage
 from zjb.gui.panels.atlas_list_panel import AtlasInterface
 from zjb.gui.panels.dtb_list_panel import DTBInterface
 from zjb.gui.panels.dynamic_model_list_panel import DynamicModelInterface
@@ -78,6 +87,73 @@ class CustomTitleBar(MSFluentTitleBar):
         self.hBoxLayout.insertLayout(4, self.toolButtonLayout)
 
 
+class WinInterface(ScrollArea):
+    """窗口区域"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.setObjectName("WinInterface")
+        self.setStyleSheet("#WinInterface{background:transparent;border:none}")
+        self.horizontalLayout = QHBoxLayout(self)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setSpacing(4)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+
+        self.win_panel = QWidget(self)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.win_panel.sizePolicy().hasHeightForWidth())
+        self.win_panel.setSizePolicy(sizePolicy)
+        self.win_panel.setObjectName("win_panel")
+        self.win_panel_layout = QVBoxLayout(self.win_panel)
+        self.win_panel_layout.setContentsMargins(0, 0, 0, 0)
+        self.win_panel_layout.setObjectName("win_panel_layout")
+
+        # add tab bar
+        self.tabBar = TabBar(self)
+        self.tabBar.setMovable(True)
+        self.tabBar.setTabMaximumWidth(220)
+        self.tabBar.setTabShadowEnabled(False)
+        self.tabBar.setTabSelectedBackgroundColor(
+            QColor(255, 255, 255, 125), QColor(255, 255, 255, 50)
+        )
+        # self.tabBar.setScrollable(True)
+        self.tabBar.setAddButtonVisible(False)
+        self.tabBar.setCloseButtonDisplayMode(TabCloseButtonDisplayMode.ON_HOVER)
+        self.tabBar.tabCloseRequested.connect(self.tabBar.removeTab)
+        self.tabBar.currentChanged.connect(lambda i: print(self.tabBar.tabText(i)))
+
+        self.stackedWindows = QStackedWidget(self, objectName="stackedWindows")
+        self.win_panel_layout.addWidget(self.tabBar)
+        self.win_panel_layout.addWidget(self.stackedWindows)
+        self.horizontalLayout.addWidget(self.win_panel)
+
+        self.addPage(WelcomePage("Welcome", "Welcome", FluentIcon.HOME))
+        self.tabBar.currentChanged.connect(self.onTabChanged)
+        self.tabBar.tabAddRequested.connect(self.onTabAddRequested)
+
+    def canDrag(self, pos: QPoint):
+        """tab拖拽方法"""
+        if not super().canDrag(pos):
+            return False
+        pos.setX(pos.x() - self.tabBar.x())
+        return not self.tabBar.tabRegion().contains(pos)
+
+    def onTabChanged(self, index: int):
+        """tab切换操作"""
+        objectName = self.tabBar.currentTab().routeKey()
+        self.stackedWindows.setCurrentWidget(self.findChild(BasePage, name=objectName))
+
+    def addPage(self, page: BasePage):
+        """
+        层叠窗口区域新增加一个页面
+        :param: page: Tab对应的页面
+        """
+        self.stackedWindows.addWidget(page)
+        self.tabBar.addTab(page.getRouteKey(), page.getTitle(), page.getIcon())
+
+
 class MainWindow(FluentWindow):
     """主窗口"""
 
@@ -113,6 +189,7 @@ class MainWindow(FluentWindow):
         self.hBoxLayout.addWidget(self.navigationInterface)
         self.hBoxLayout.addWidget(self.widgetLayout)
         self.hBoxLayout.setStretchFactor(self.widgetLayout, 1)
+        self.stackedWidget.setMinimumWidth(250)
         self.widgetLayout.addWidget(self.stackedWidget)
         self.widgetLayout.setStyleSheet("background-color: transparent")
         self.hBoxLayout.setContentsMargins(0, 48, 0, 0)
@@ -120,11 +197,14 @@ class MainWindow(FluentWindow):
         # 右侧的窗口群
         self.widgetWindows = WinInterface(self)
         self.widgetLayout.addWidget(self.widgetWindows)
-        self.stackedWidget.setMinimumWidth(250)
 
         desktop = QApplication.desktop().availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+
+    def addPage(self, page: BasePage):
+        """在层叠窗口区增加一个窗口"""
+        self.widgetWindows.addPage(page)
 
     def initNavigation(self):
         """初始化左侧导航栏"""
@@ -168,7 +248,7 @@ if __name__ == "__main__":
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-    setTheme(Theme.DARK)
+    # setTheme(Theme.DARK)
 
     app = QApplication(sys.argv)
     w = MainWindow()

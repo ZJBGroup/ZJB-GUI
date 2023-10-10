@@ -14,6 +14,7 @@ from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.download_file import DownLoadFile
 from ..common.utils import show_error
 from ..common.zjb_style_sheet import myZJBStyleSheet
+from .base_page import BasePage
 
 
 class Workspace:
@@ -232,10 +233,10 @@ class RecentPanel(QtWidgets.QWidget):
             self.listWidget.addItem(RecentWorkspaceItem(item))
 
 
-class WelcomePage(QtWidgets.QFrame):
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent)
-        self.setObjectName(text.replace(" ", "_"))
+class WelcomePage(BasePage):
+    def __init__(self, routeKey: str, title: str, icon, parent=None):
+        super().__init__(routeKey, title, icon, parent)
+        self.setObjectName(routeKey)
         self.vBoxLayout = QtWidgets.QVBoxLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
         # 添加gif图的板块

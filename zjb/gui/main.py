@@ -131,7 +131,6 @@ class WinInterface(ScrollArea):
 
         self.addPage(WelcomePage("Welcome", "Welcome", FluentIcon.HOME))
         self.tabBar.currentChanged.connect(self.onTabChanged)
-        self.tabBar.tabAddRequested.connect(self.onTabAddRequested)
 
     def canDrag(self, pos: QPoint):
         """tab拖拽方法"""

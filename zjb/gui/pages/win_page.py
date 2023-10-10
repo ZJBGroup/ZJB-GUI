@@ -19,10 +19,11 @@ from qfluentwidgets import (
 )
 
 from .._rc import find_resource_file
+from .welcome_page import WelcomePage
 
 
 class TabInterface(QFrame):
-    """Tab interface"""
+    """默认页面"""
 
     def __init__(self, text: str, icon, objectName, parent=None):
         super().__init__(parent=parent)
@@ -84,7 +85,11 @@ class WinInterface(ScrollArea):
 
         self.horizontalLayout.addWidget(self.win_panel)
 
-        self.addTab("Welcome", "Welcome", QIcon(find_resource_file("icon/logo.jpg")))
+        # self.addTab("Welcome", "Welcome", QIcon(find_resource_file("icon/logo.jpg")))
+        self.tabBar.addTab(
+            "Welcome", "Welcome", QIcon(find_resource_file("icon/logo.jpg"))
+        )
+        self.homeInterface.addWidget(WelcomePage("self"))
         self.tabBar.currentChanged.connect(self.onTabChanged)
         self.tabBar.tabAddRequested.connect(self.onTabAddRequested)
 

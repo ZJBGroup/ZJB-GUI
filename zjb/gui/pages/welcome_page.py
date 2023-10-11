@@ -16,6 +16,8 @@ from ..common.utils import show_error
 from ..common.zjb_style_sheet import myZJBStyleSheet
 from .base_page import BasePage
 
+# from zjb.main.manager.workspace import Workspace
+
 
 class Workspace:
     def __init__(self, path: str, worker_count, parent=None):

@@ -32,6 +32,7 @@ from zjb.gui.panels.atlas_list_panel import AtlasInterface
 from zjb.gui.panels.dtb_list_panel import DTBInterface
 from zjb.gui.panels.dynamic_model_list_panel import DynamicModelInterface
 from zjb.gui.panels.job_manager_list_panel import JobManagerInterface
+from zjb.main.manager.workspace import Workspace
 
 
 class NewButton(TransparentDropDownPushButton):
@@ -110,7 +111,6 @@ class WinInterface(ScrollArea):
         self.win_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.win_panel_layout.setObjectName("win_panel_layout")
 
-        # add tab bar
         self.tabBar = TabBar(self)
         self.tabBar.setMovable(True)
         self.tabBar.setTabMaximumWidth(220)
@@ -121,16 +121,16 @@ class WinInterface(ScrollArea):
         # self.tabBar.setScrollable(True)
         self.tabBar.setAddButtonVisible(False)
         self.tabBar.setCloseButtonDisplayMode(TabCloseButtonDisplayMode.ON_HOVER)
-        self.tabBar.tabCloseRequested.connect(self.tabBar.removeTab)
-        self.tabBar.currentChanged.connect(lambda i: print(self.tabBar.tabText(i)))
+        self.tabBar.tabCloseRequested.connect(self._closePage)
+        self.tabBar.currentChanged.connect(self._onTabChanged)
 
         self.stackedWindows = QStackedWidget(self, objectName="stackedWindows")
         self.win_panel_layout.addWidget(self.tabBar)
         self.win_panel_layout.addWidget(self.stackedWindows)
         self.horizontalLayout.addWidget(self.win_panel)
 
-        self.addPage(WelcomePage("Welcome", "Welcome", FluentIcon.HOME))
-        self.tabBar.currentChanged.connect(self._onTabChanged)
+        self.welcome_page = WelcomePage("Welcome", "Welcome", FluentIcon.HOME)
+        self.addPage(self.welcome_page)
 
     def canDrag(self, pos: QPoint):
         """tab拖拽方法"""
@@ -143,6 +143,17 @@ class WinInterface(ScrollArea):
         """tab切换操作"""
         objectName = self.tabBar.currentTab().routeKey()
         self.stackedWindows.setCurrentWidget(self.findChild(BasePage, name=objectName))
+
+    def _closePage(self, index):
+        """
+        点击Tab的关闭按钮，关闭对应的页面
+        :param: index: 所点击Tab的索引
+        """
+        page_routeKey = self.tabBar.tabItem(index).routeKey()
+        close_page = self.findChild(BasePage, name=page_routeKey)
+        self.stackedWindows.removeWidget(close_page)
+        close_page.deleteLater()
+        self.tabBar.removeTab(index)
 
     def _openPage(self, page: BasePage):
         """
@@ -249,6 +260,12 @@ class MainWindow(FluentWindow):
             self.widgetWindows.hide()
         else:
             self.widgetWindows.show()
+
+    def setWorkspace(self, workspace: Workspace):
+        self._work_space = workspace
+        # self.workspace_page.setWorkspace(workspace)
+        # self.job_page.setWorkspace(workspace)
+        # self.switchTo(self.workspace_page)
 
 
 if __name__ == "__main__":

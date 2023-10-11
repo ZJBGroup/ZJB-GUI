@@ -6,7 +6,7 @@ from zjb.main.manager.workspace import Workspace
 
 class _GlobalSignal(QObject):
     # 全局工作空间发生变化
-    workspaceChanged = pyqtSignal([], [int])
+    workspaceChanged = pyqtSignal([], [Workspace])
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

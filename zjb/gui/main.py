@@ -130,7 +130,7 @@ class WinInterface(ScrollArea):
         self.horizontalLayout.addWidget(self.win_panel)
 
         self.addPage(WelcomePage("Welcome", "Welcome", FluentIcon.HOME))
-        self.tabBar.currentChanged.connect(self.onTabChanged)
+        self.tabBar.currentChanged.connect(self._onTabChanged)
 
     def canDrag(self, pos: QPoint):
         """tab拖拽方法"""
@@ -139,18 +139,31 @@ class WinInterface(ScrollArea):
         pos.setX(pos.x() - self.tabBar.x())
         return not self.tabBar.tabRegion().contains(pos)
 
-    def onTabChanged(self, index: int):
+    def _onTabChanged(self, index: int):
         """tab切换操作"""
         objectName = self.tabBar.currentTab().routeKey()
         self.stackedWindows.setCurrentWidget(self.findChild(BasePage, name=objectName))
+
+    def _openPage(self, page: BasePage):
+        """
+        打开指定页面，点亮指定 Tab
+        :param: page: Tab对应的页面
+        """
+        self.stackedWindows.setCurrentWidget(page)
+        self.tabBar.setCurrentTab(page.getRouteKey())
 
     def addPage(self, page: BasePage):
         """
         层叠窗口区域新增加一个页面
         :param: page: Tab对应的页面
         """
-        self.stackedWindows.addWidget(page)
-        self.tabBar.addTab(page.getRouteKey(), page.getTitle(), page.getIcon())
+        flag = self.findChild(BasePage, name=page.getRouteKey())
+        # 若该页面已打开则直接跳转到该页面
+        if flag == None:
+            self.stackedWindows.addWidget(page)
+            self.tabBar.addTab(page.getRouteKey(), page.getTitle(), page.getIcon())
+            flag = page
+        self._openPage(flag)
 
 
 class MainWindow(FluentWindow):
@@ -162,7 +175,6 @@ class MainWindow(FluentWindow):
         self.initWindow()
 
         self.dtbWinInterface = DTBInterface(self)
-        self.dtbWinInterface2 = DTBInterface(self)
         self.atlasInterface = AtlasInterface(self)
         self.dynamicModelInterface = DynamicModelInterface(self)
         self.jobManagerInterface = JobManagerInterface(self)
@@ -212,7 +224,6 @@ class MainWindow(FluentWindow):
         self.addSubInterface(
             self.dtbWinInterface, FluentIcon.GLOBE, "Digital Twin Brain", pos
         )
-        self.addSubInterface(self.dtbWinInterface2, FluentIcon.GAME, "Faker", pos)
         self.addSubInterface(self.atlasInterface, FluentIcon.IOT, "Atlas", pos)
         self.addSubInterface(
             self.dynamicModelInterface, FluentIcon.CALORIES, "Dynamic Model", pos

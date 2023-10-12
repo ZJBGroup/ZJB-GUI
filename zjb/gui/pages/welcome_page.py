@@ -1,48 +1,21 @@
 import json
 import os
-import re
-import typing
 from threading import Thread
 
-from _global import GLOBAL_SIGNAL, open_workspace
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QMovie
-from qfluentwidgets import CaptionLabel, Dialog, FluentIcon, LineEdit, ListWidget
+from qfluentwidgets import FluentIcon, ListWidget
+from zjb.main.manager.workspace import Workspace
 
+from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config import cfg
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.download_file import DownLoadFile
 from ..common.utils import show_error
 from ..common.zjb_style_sheet import myZJBStyleSheet
+from ..widgets.input_name_dialog import show_dialog
 from .base_page import BasePage
-
-# from zjb.main.manager.workspace import Workspace
-
-
-class Workspace:
-    def __init__(self, path: str, worker_count, parent=None):
-        self._worker_count = worker_count
-        self._path = path
-
-
-class InputDialog(Dialog):
-    """输入工作空间名称的弹窗类"""
-
-    def __init__(self, title: str, content: str, parent=None):
-        super().__init__(title, content=content, parent=parent)
-        self.lineEdit = LineEdit(self)
-        tips = "Please enter 3 to 20 characters consisting of '0-9','a-z','A-Z','_'"
-        self.tipsLabel = CaptionLabel(tips, self)
-        self.tipsLabel.setTextColor("#606060", "#d2d2d2")
-        self.tipsLabel.setObjectName("contentLabel")
-        self.tipsLabel.setWordWrap(True)
-        self.tipsLabel.setFixedSize(250, 40)
-        self.lineEdit.setFixedSize(250, 33)
-        self.lineEdit.setClearButtonEnabled(True)
-        self.lineEdit.move(45, 70)
-        self.tipsLabel.move(47, 110)
-        self.setTitleBarVisible(False)
 
 
 class StartPanel(QtWidgets.QWidget):
@@ -93,14 +66,14 @@ class StartPanel(QtWidgets.QWidget):
 
     def _new_workspace(self):
         """新建一个工作空间"""
-        workspace_name = self.showDialog()
+        workspace_name = show_dialog(self.window())
         if workspace_name:
             w_path = QtWidgets.QFileDialog.getExistingDirectory(self, "New Workspace")
             if w_path:
                 workspace_path = f"{w_path}/{workspace_name}"
                 os.mkdir(workspace_path)
-                open_workspace(workspace_path)
                 sync_recent_config(workspace_name, workspace_path)
+                open_workspace(workspace_path)
 
     def _open_workspace(self):
         """打开一个工作空间"""
@@ -111,8 +84,8 @@ class StartPanel(QtWidgets.QWidget):
             workspace_name = workspace_path.split("/")[
                 len(workspace_path.split("/")) - 1
             ]
-            open_workspace(workspace_path)
             get_worker_count = sync_recent_config(workspace_name, workspace_path)
+            open_workspace(workspace_path)
 
     def _sync_listWidget(self):
         """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
@@ -124,21 +97,6 @@ class StartPanel(QtWidgets.QWidget):
         self.openWorkspace = QtWidgets.QListWidgetItem("Open Workspace")
         self.openWorkspace.setIcon(FluentIcon.FOLDER.icon())
         self.listWidget.addItem(self.openWorkspace)
-
-    def showDialog(self):
-        """配置弹窗并显示，用户输入符合标准的名称后将其返回"""
-        title = "Please name your workspace:"
-        content = "\n| \n| \n| \n| \n|"
-        w = InputDialog(title, content, self)
-        if w.exec():
-            str = w.lineEdit.text()
-            res = re.search("^\w{3,20}$", str)
-            if not res:
-                show_error("Invalid name! ", self.window())
-            else:
-                return str
-        else:
-            return False
 
 
 class RecentWorkspaceItem(QtWidgets.QListWidgetItem):

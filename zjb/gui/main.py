@@ -1,7 +1,6 @@
 # coding:utf-8
 import sys
 
-from _global import GLOBAL_SIGNAL
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (
@@ -25,6 +24,7 @@ from qfluentwidgets import (
     TabCloseButtonDisplayMode,
     TransparentDropDownPushButton,
 )
+from zjb.gui._global import GLOBAL_SIGNAL
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
 from zjb.gui.pages.setting_page import SettingInterface

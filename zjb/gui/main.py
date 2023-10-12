@@ -1,6 +1,7 @@
 # coding:utf-8
 import sys
 
+from _global import GLOBAL_SIGNAL
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (
@@ -196,6 +197,8 @@ class MainWindow(FluentWindow):
 
         self.initNavigation()
 
+        GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
+
     def initWindow(self):
         """初始化窗口"""
 
@@ -263,6 +266,7 @@ class MainWindow(FluentWindow):
 
     def setWorkspace(self, workspace: Workspace):
         self._work_space = workspace
+        print("self._work_space==============", self._work_space)
         # self.workspace_page.setWorkspace(workspace)
         # self.job_page.setWorkspace(workspace)
         # self.switchTo(self.workspace_page)

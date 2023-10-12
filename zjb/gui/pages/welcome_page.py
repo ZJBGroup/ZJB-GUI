@@ -4,6 +4,7 @@ import re
 import typing
 from threading import Thread
 
+from _global import GLOBAL_SIGNAL, open_workspace
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QMovie
@@ -47,8 +48,6 @@ class InputDialog(Dialog):
 class StartPanel(QtWidgets.QWidget):
     """主页开始面板"""
 
-    workSpaceChanged = pyqtSignal(object)
-
     def __init__(self, text: str, worker_count, parent=None):
         super().__init__(parent)
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
@@ -81,7 +80,7 @@ class StartPanel(QtWidgets.QWidget):
         self.hBoxLayout.addWidget(self.right_panel)
         cfg.themeChanged.connect(lambda: self._sync_listWidget())
 
-    def _on_current_item_click(self, item: typing.Optional[QtWidgets.QListWidgetItem]):
+    def _on_current_item_click(self, item: QtWidgets.QListWidgetItem):
         """
         点击按钮触发不同的事件
         :param: item: 所点击的条目
@@ -90,25 +89,41 @@ class StartPanel(QtWidgets.QWidget):
             self._new_workspace()
         if item.text() == "Open Workspace":
             self._open_workspace()
+        self.listWidget.clearSelection()
 
     def _new_workspace(self):
         """新建一个工作空间"""
         workspace_name = self.showDialog()
         if workspace_name:
-            dname = QtWidgets.QFileDialog.getExistingDirectory(self, "New Workspace")
-            if dname:
-                path = os.path.join(dname, f"{workspace_name}.lmdb")
-                if os.path.exists(path):
-                    show_error("Exist old workspace!", self.window())
-                    return
-                url = "http://10.11.140.13:8000/f/d5ffeb40db12404e8fb5/?dl=1"
-                downobj = DownLoadFile(url, path)
-                downobj.download_from_url()
-                sync_recent_config(
-                    workspace_name, f"{dname}/{workspace_name}.lmdb", self._worker_count
-                )
-                self.workSpaceChanged.emit(Workspace(path, self._worker_count))
-            self.listWidget.clearSelection()
+            w_path = QtWidgets.QFileDialog.getExistingDirectory(self, "New Workspace")
+            if w_path:
+                workspace_path = f"{w_path}/{workspace_name}"
+                os.mkdir(workspace_path)
+                open_workspace(workspace_path)
+                sync_recent_config(workspace_name, workspace_path)
+
+    def _open_workspace(self):
+        """打开一个工作空间"""
+        workspace_path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Open Workspace"
+        )
+        if workspace_path:
+            workspace_name = workspace_path.split("/")[
+                len(workspace_path.split("/")) - 1
+            ]
+            open_workspace(workspace_path)
+            get_worker_count = sync_recent_config(workspace_name, workspace_path)
+
+    def _sync_listWidget(self):
+        """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
+        self.listWidget.clear()
+        self.listWidget.clearSelection()
+        self.newWorkspace = QtWidgets.QListWidgetItem("New Workspace")
+        self.newWorkspace.setIcon(FluentIcon.FOLDER_ADD.icon())
+        self.listWidget.addItem(self.newWorkspace)
+        self.openWorkspace = QtWidgets.QListWidgetItem("Open Workspace")
+        self.openWorkspace.setIcon(FluentIcon.FOLDER.icon())
+        self.listWidget.addItem(self.openWorkspace)
 
     def showDialog(self):
         """配置弹窗并显示，用户输入符合标准的名称后将其返回"""
@@ -124,30 +139,6 @@ class StartPanel(QtWidgets.QWidget):
                 return str
         else:
             return False
-
-    def _open_workspace(self):
-        """打开一个工作空间"""
-        fname, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open Workspace", filter="Workspace files (*.lmdb)"
-        )
-        workspace_name = fname.split("/")[len(fname.split("/")) - 1].replace(
-            ".lmdb", ""
-        )
-        if fname:
-            get_worker_count = sync_recent_config(workspace_name, fname)
-            self.workSpaceChanged.emit(Workspace(fname, get_worker_count))
-        self.listWidget.clearSelection()
-
-    def _sync_listWidget(self):
-        """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
-        self.listWidget.clear()
-        self.listWidget.clearSelection()
-        self.newWorkspace = QtWidgets.QListWidgetItem("New Workspace")
-        self.newWorkspace.setIcon(FluentIcon.FOLDER_ADD.icon())
-        self.listWidget.addItem(self.newWorkspace)
-        self.openWorkspace = QtWidgets.QListWidgetItem("Open Workspace")
-        self.openWorkspace.setIcon(FluentIcon.FOLDER.icon())
-        self.listWidget.addItem(self.openWorkspace)
 
 
 class RecentWorkspaceItem(QtWidgets.QListWidgetItem):
@@ -170,8 +161,6 @@ class RecentWorkspaceItem(QtWidgets.QListWidgetItem):
 
 class RecentPanel(QtWidgets.QWidget):
     """最近打开模块的面板类"""
-
-    workSpaceChanged = pyqtSignal(object)
 
     def __init__(self, text: str, worker_count, parent=None):
         super().__init__(parent)
@@ -210,16 +199,16 @@ class RecentPanel(QtWidgets.QWidget):
         self.hBoxLayout.addWidget(self.left_panel)
         self.hBoxLayout.addWidget(self.right_panel)
 
-    def _on_current_item_click(self, item: typing.Optional[RecentWorkspaceItem]):
+    def _on_current_item_click(self, item: RecentWorkspaceItem):
         """点击一个 最近打开 的条目"""
-        fpath = item.getWorkspacePath()
-        fname = item.getWorkspaceName()
-        if os.path.exists(fpath):
-            get_worker_count = sync_recent_config(fname, fpath)
-            self.workSpaceChanged.emit(Workspace(fpath, get_worker_count))
+        w_path = item.getWorkspacePath()
+        w_name = item.getWorkspaceName()
+        if os.path.exists(w_path):
+            get_worker_count = sync_recent_config(w_name, w_path)
+            open_workspace(w_path)
         else:
             # 未找到文件
-            sync_recent_config(fname, fpath, state="del")
+            sync_recent_config(w_name, w_path, state="del")
             show_error("workspace not find", self.window())
         self._sync_recent_list()
         self.listWidget.clearSelection()
@@ -284,7 +273,7 @@ class WelcomePage(BasePage):
         self.bottom_panel_layout.addWidget(self.bottom_right_panel_layout)
         self.bottom_panel_layout.addStretch(3)
         self.vBoxLayout.addWidget(self.bottom_panel)
-        self.bottom_left_panel_layout.workSpaceChanged.connect(
+        GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(
             self.bottom_right_panel_layout._sync_recent_list
         )
         self.scalebase = {"width": 11, "height": 7}

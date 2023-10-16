@@ -1,5 +1,4 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-
 from zjb.doj.lmdb_job_manager import LMDBJobManager
 from zjb.main.manager.workspace import Workspace
 
@@ -47,6 +46,7 @@ def open_workspace(path: str):
 
     jm = LMDBJobManager(path=path)
     _workspace = Workspace.from_manager(jm)
+    _workspace.name = path.split("/")[len(path.split("/")) - 1]
     GLOBAL_SIGNAL.workspaceChanged[Workspace].emit(_workspace)
 
 

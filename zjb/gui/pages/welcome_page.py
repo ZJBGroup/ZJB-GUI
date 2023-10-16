@@ -68,7 +68,9 @@ class StartPanel(QtWidgets.QWidget):
         """新建一个工作空间"""
         workspace_name = show_dialog(self.window())
         if workspace_name:
-            w_path = QtWidgets.QFileDialog.getExistingDirectory(self, "New Workspace")
+            w_path = QtWidgets.QFileDialog.getExistingDirectory(
+                self.window(), "New Workspace"
+            )
             if w_path:
                 workspace_path = f"{w_path}/{workspace_name}"
                 os.mkdir(workspace_path)
@@ -78,7 +80,7 @@ class StartPanel(QtWidgets.QWidget):
     def _open_workspace(self):
         """打开一个工作空间"""
         workspace_path = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Open Workspace"
+            self.window(), "Open Workspace"
         )
         if workspace_path:
             workspace_name = workspace_path.split("/")[

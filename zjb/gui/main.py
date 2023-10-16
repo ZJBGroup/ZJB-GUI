@@ -13,18 +13,14 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 from qfluentwidgets import (
-    Action,
     FluentIcon,
     FluentWindow,
     MSFluentTitleBar,
     NavigationItemPosition,
-    RoundMenu,
     ScrollArea,
     TabBar,
     TabCloseButtonDisplayMode,
-    TransparentDropDownPushButton,
 )
-
 from zjb.gui._global import GLOBAL_SIGNAL
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
@@ -34,43 +30,8 @@ from zjb.gui.panels.atlas_list_panel import AtlasInterface
 from zjb.gui.panels.dtb_list_panel import DTBInterface
 from zjb.gui.panels.dynamic_model_list_panel import DynamicModelInterface
 from zjb.gui.panels.job_manager_list_panel import JobManagerInterface
+from zjb.gui.widgets.titlebar_button import NewButton, OpenButton
 from zjb.main.manager.workspace import Workspace
-
-
-class NewButton(TransparentDropDownPushButton):
-    """New 按钮及其下拉菜单"""
-
-    def __init__(self, name):
-        super().__init__()
-        self.setText(name)
-        self.newMenu = RoundMenu(parent=self)
-        self.newMenu.addAction(Action(FluentIcon.FOLDER, "WorkSpace"))
-        self.newMenu.addAction(Action(FluentIcon.TILES, "Project"))
-        self.newMenu.addAction(Action(FluentIcon.PEOPLE, "Subject"))
-        self.newMenu.addAction(Action(FluentIcon.LIBRARY, "DTB Model"))
-        self.newMenu.addAction(Action(FluentIcon.LEAF, "DTB"))
-        self.setMenu(self.newMenu)
-
-
-class OpenButton(TransparentDropDownPushButton):
-    """Open 按钮及其下拉菜单"""
-
-    def __init__(self, name):
-        super().__init__()
-        self.setText(name)
-        self.openMenu = RoundMenu(parent=self)
-        self.openMenu.addAction(Action(FluentIcon.FOLDER, "WorkSpace"))
-        submenu = RoundMenu("Recent", self)
-        submenu.setIcon(FluentIcon.FOLDER)
-        # TODO :不用二级菜单去展示最近打开的工作空间
-        submenu.addActions(
-            [
-                Action(FluentIcon.VIDEO, "Video"),
-                Action(FluentIcon.MUSIC, "Music"),
-            ]
-        )
-        self.openMenu.addMenu(submenu)
-        self.setMenu(self.openMenu)
 
 
 class CustomTitleBar(MSFluentTitleBar):
@@ -268,7 +229,7 @@ class MainWindow(FluentWindow):
 
     def setWorkspace(self, workspace: Workspace):
         self._work_space = workspace
-        print("self._work_space==============", self._work_space)
+        print("self._work_space==============", self._work_space.name)
         # self.workspace_page.setWorkspace(workspace)
         # self.job_page.setWorkspace(workspace)
         # self.switchTo(self.workspace_page)

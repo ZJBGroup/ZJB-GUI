@@ -10,6 +10,7 @@ from qfluentwidgets import (
     SubtitleLabel,
 )
 
+from .._global import GLOBAL_SIGNAL
 from ..pages.job_list_page import JobListPage
 from ..pages.worker_manager_page import WorkerManagerPage
 
@@ -40,12 +41,12 @@ class JobManagerInterface(ScrollArea):
 
     def _itemClicked(self, item: QListWidgetItem):
         if item.text() == "Job List":
-            self.window().addPage(
+            GLOBAL_SIGNAL.requestAddPage.emit(
                 JobListPage("Job List", "Job List", FluentIcon.DOCUMENT)
             )
 
         if item.text() == "Worker Manager":
-            self.window().addPage(
+            GLOBAL_SIGNAL.requestAddPage.emit(
                 WorkerManagerPage(
                     "Worker Manager", "Worker Manager", FluentIcon.DEVELOPER_TOOLS
                 )

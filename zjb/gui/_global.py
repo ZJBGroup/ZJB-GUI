@@ -3,10 +3,14 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from zjb.doj.lmdb_job_manager import LMDBJobManager
 from zjb.main.manager.workspace import Workspace
 
+from .pages.base_page import BasePage
+
 
 class _GlobalSignal(QObject):
     # 全局工作空间发生变化
     workspaceChanged = pyqtSignal([], [Workspace])
+
+    requestAddPage = pyqtSignal(BasePage)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

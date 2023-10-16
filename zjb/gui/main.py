@@ -24,6 +24,7 @@ from qfluentwidgets import (
     TabCloseButtonDisplayMode,
     TransparentDropDownPushButton,
 )
+
 from zjb.gui._global import GLOBAL_SIGNAL
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
@@ -198,6 +199,7 @@ class MainWindow(FluentWindow):
         self.initNavigation()
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
+        GLOBAL_SIGNAL.requestAddPage.connect(self.addPage)
 
     def initWindow(self):
         """初始化窗口"""

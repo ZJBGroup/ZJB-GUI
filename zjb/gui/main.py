@@ -21,6 +21,7 @@ from qfluentwidgets import (
     TabBar,
     TabCloseButtonDisplayMode,
 )
+
 from zjb.gui._global import GLOBAL_SIGNAL
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage

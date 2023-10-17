@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>atlas_surface_page</class>
+ <widget class="QWidget" name="atlas_surface_page">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>847</width>
+    <height>551</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="StrongBodyLabel" name="StrongBodyLabel">
+       <property name="text">
+        <string>ColorBar:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ComboBox" name="choose_colorbar_cbb">
+       <property name="text">
+        <string>Choose...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="StrongBodyLabel" name="StrongBodyLabel_2">
+       <property name="text">
+        <string>Color Numbers</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="LineEdit" name="color_number_edit">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>20</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="StrongBodyLabel" name="StrongBodyLabel_3">
+       <property name="text">
+        <string>Shader</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ComboBox" name="choose_shader_cbb">
+       <property name="text">
+        <string>Choose</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="StrongBodyLabel" name="StrongBodyLabel_4">
+       <property name="text">
+        <string>Base Color</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Slider" name="base_color_slider">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,3">
+     <item>
+      <widget class="BrainRegionsPanel" name="brain_regions_panel" native="true"/>
+     </item>
+     <item>
+      <widget class="AtlasSurfaceViewWidget" name="atlas_surface_view_widget" native="true"/>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>Slider</class>
+   <extends>QSlider</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>StrongBodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>AtlasSurfaceViewWidget</class>
+   <extends>QWidget</extends>
+   <header>zjb.main.visualization.surface_space</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BrainRegionsPanel</class>
+   <extends>QWidget</extends>
+   <header>zjb.gui.panels.brain_regions_panel</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

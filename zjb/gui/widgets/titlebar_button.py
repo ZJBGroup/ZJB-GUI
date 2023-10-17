@@ -3,7 +3,7 @@ import json
 import os
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QListWidgetItem, QWidget
+from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QWidget
 from qfluentwidgets import (
     Action,
     FluentIcon,
@@ -53,14 +53,16 @@ class OpenButton(TransparentDropDownPushButton):
         super().__init__()
         self.setText(name)
         self.openMenu = RoundMenu(parent=self)
+
         self.openMenu.addAction(
             Action(FluentIcon.FOLDER, "WorkSpace", triggered=self._open_workspace)
         )
         self.openMenu.addSeparator()
-        self.openMenu.setContentsMargins(0, 0, 0, 0)
 
-        self.recent_list = TitlebarRecentList(self)
+        self.recent_list = RecentWorkspaceList(self, "title")
         self.openMenu.addWidget(self.recent_list, selectable=False)
+
+        self.openMenu.addSection("123")
 
         self.setMenu(self.openMenu)
 
@@ -95,15 +97,22 @@ class RecentWorkspaceItem(QListWidgetItem):
         return self.name
 
 
-class TitlebarRecentList(QWidget):
+class RecentWorkspaceList(QWidget):
     """RecentList"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, position="welcome"):
         super().__init__(parent=parent)
-
         self.listWidget = ListWidget(self)
-        self.setFixedSize(400, 150)
-        self.listWidget.setFixedSize(360, 150)
+        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        if position == "welcome":
+            # 适用于欢迎页面的面板
+            self.setMinimumWidth(320)
+            self.listWidget.setMaximumHeight(85)
+        else:
+            # 适用于标题栏的面板
+            self.setFixedSize(400, 150)
+            self.listWidget.setFixedSize(360, 150)
 
         # 读取本地配置文件，取出最近打开过的工作区
         configPath = f"{get_local_config_path()}/recent_workspace.json"

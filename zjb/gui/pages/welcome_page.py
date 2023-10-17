@@ -15,6 +15,7 @@ from ..common.download_file import DownLoadFile
 from ..common.utils import show_error
 from ..common.zjb_style_sheet import myZJBStyleSheet
 from ..widgets.input_name_dialog import show_dialog
+from ..widgets.titlebar_button import RecentWorkspaceList
 from .base_page import BasePage
 
 
@@ -101,24 +102,6 @@ class StartPanel(QtWidgets.QWidget):
         self.listWidget.addItem(self.openWorkspace)
 
 
-class RecentWorkspaceItem(QtWidgets.QListWidgetItem):
-    """最近打开面板的每一个条目的类"""
-
-    def __init__(self, obj, parent=None):
-        super().__init__(parent)
-        self.name = obj["name"]
-        self.path = obj["path"]
-        self.setText(f"{self.name} > {self.path}")
-
-    def getWorkspacePath(self):
-        """获取路径"""
-        return self.path
-
-    def getWorkspaceName(self):
-        """获取名称"""
-        return self.name
-
-
 class RecentPanel(QtWidgets.QWidget):
     """最近打开模块的面板类"""
 
@@ -126,7 +109,6 @@ class RecentPanel(QtWidgets.QWidget):
         super().__init__(parent)
         self._worker_count = worker_count
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
-        # 左侧 RECENT label
         self.left_panel = QtWidgets.QWidget(self)
         self.left_panel.setMaximumWidth(200)
         self.left_panel_layout = QtWidgets.QVBoxLayout(self.left_panel)
@@ -135,53 +117,9 @@ class RecentPanel(QtWidgets.QWidget):
         self.labelTitle.setObjectName("labelTitle")
         self.left_panel_layout.addWidget(self.labelTitle)
         myZJBStyleSheet.SETTING_STYLE.apply(self)
-        # 右侧列表
-        self.right_panel = QtWidgets.QWidget(self)
-        self.right_panel.setMinimumWidth(300)
-        self.right_panel_layout = QtWidgets.QVBoxLayout(self.right_panel)
-        self.listWidget = ListWidget(self)
-        self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # 读取本地配置文件，取出最近打开过的工作区
-        configPath = f"{get_local_config_path()}/recent_workspace.json"
-        self.recentList = []
-        # 若没有配置文件先创建一个
-        if os.path.exists(configPath) == False:
-            with open(configPath, "w") as f:
-                data_str = json.dumps([])
-                f.write(data_str)
-        with open(configPath, "r") as f:
-            self.recentList = json.load(f)
-            for item in self.recentList:
-                self.listWidget.addItem(RecentWorkspaceItem(item))
-        self.right_panel_layout.addWidget(self.listWidget)
-        self.listWidget.itemClicked.connect(self._on_current_item_click)
-        # 增加布局
+        self.right_panel = RecentWorkspaceList(self, "welcome")
         self.hBoxLayout.addWidget(self.left_panel)
         self.hBoxLayout.addWidget(self.right_panel)
-
-    def _on_current_item_click(self, item: RecentWorkspaceItem):
-        """点击一个 最近打开 的条目"""
-        w_path = item.getWorkspacePath()
-        w_name = item.getWorkspaceName()
-        if os.path.exists(w_path):
-            get_worker_count = sync_recent_config(w_name, w_path)
-            open_workspace(w_path)
-        else:
-            # 未找到文件
-            sync_recent_config(w_name, w_path, state="del")
-            show_error("workspace not find", self.window())
-        self._sync_recent_list()
-        self.listWidget.clearSelection()
-
-    def _sync_recent_list(self):
-        """每一次内容有修改之后更新整个 最近打开 的列表"""
-        self.listWidget.clear()
-        configPath = f"{get_local_config_path()}/recent_workspace.json"
-        self.recentList = []
-        with open(configPath, "r") as f:
-            self.recentList = json.load(f)
-        for item in self.recentList:
-            self.listWidget.addItem(RecentWorkspaceItem(item))
 
 
 class WelcomePage(BasePage):
@@ -234,7 +172,7 @@ class WelcomePage(BasePage):
         self.bottom_panel_layout.addStretch(3)
         self.vBoxLayout.addWidget(self.bottom_panel)
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(
-            self.bottom_right_panel_layout._sync_recent_list
+            self.bottom_right_panel_layout.right_panel._sync_recent_list
         )
         self.scalebase = {"width": 11, "height": 7}
 

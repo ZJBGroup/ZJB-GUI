@@ -230,6 +230,8 @@ class MainWindow(FluentWindow):
     def setWorkspace(self, workspace: Workspace):
         self._work_space = workspace
         print("self._work_space==============", self._work_space.name)
+        self.dynamicModelInterface.setWorkspace(workspace)
+
         # self.workspace_page.setWorkspace(workspace)
         # self.job_page.setWorkspace(workspace)
         # self.switchTo(self.workspace_page)

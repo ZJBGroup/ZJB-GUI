@@ -18,9 +18,25 @@ class BrainRegionsPanel(QWidget):
         self.ui.brain_regions_widget.itemClicked.connect(self._select_tree_region)
 
     def show_tree_brain_regions(self, atlas):
-        self.ui.brain_regions_widget.show_braindata(atlas.subregions)
-        self.ui.TitleLabel.setText(atlas.name)
-        self.get_select_all()
+
+        if atlas.subregions:
+            self.ui.brain_regions_widget.show_braindata(atlas.subregions)
+            self.ui.TitleLabel.setText(atlas.name)
+            self.get_select_all()
+        else:
+            i = 0
+            _dict = {}
+            dict_labels = {}
+            for label in atlas.labels:
+                dict_labels[label]=i
+                i += 1
+
+            _dict['Regions'] = dict_labels
+
+
+            self.ui.brain_regions_widget.show_braindata(_dict)
+            self.ui.TitleLabel.setText(atlas.name)
+            self.get_select_all()
 
     def _select_tree_region(self):
         [

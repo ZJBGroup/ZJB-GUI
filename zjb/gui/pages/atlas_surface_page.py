@@ -203,14 +203,14 @@ class Atlas_Surface_Page(BasePage):
         self.ui.brain_regions_panel.ui.brain_regions_widget.set_regions(currentRegions)
         if region_data1 != 0:
             content = (
-                "当前勾选了第" + str(region_number + 1) + "个脑区" + "\n"
-                "脑区名："
+                "No." + str(region_number + 1) + "  brain region is currently checked" + "\n"
+                "Region name："
                 + region_data1
                 + "\n"
-                + "亚区："
+                + "Subregion name："
                 + region_data2
                 + "\n"
-                + "解剖分区："
+                + "Anatomic profile："
                 + region_data3
             )
         Flyout.create(
@@ -243,7 +243,3 @@ class Atlas_Surface_Page(BasePage):
                 self.surface_region_mapping, self.regioncolor_list_contrast
             )
 
-    def show_tree_brain_regions(self, atlas):
-        self.ui.brain_regions_panel.show_braindata(atlas.subregions)
-        self.ui.TitleLabel.setText(atlas.name)
-        self.get_select_all()

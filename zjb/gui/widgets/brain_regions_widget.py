@@ -79,10 +79,20 @@ class BrainRegionsWidget(TreeWidget):
             if item_tra.text(1) == str(clickeditem):
                 item_tra.setCheckState(0, Qt.Checked)
                 self.scrollToItem(item_tra)
+                if item_tra.parent():
+                    text_0 = item_tra.parent().text(0)
+                else:
+                    text_0 = 'no subregion exist'
+
+                if item_tra.parent().parent():
+                    text_1 = item_tra.parent().parent().text(0)
+                else:
+                    text_1 = 'No anatomical partitions exist'
+
                 return (
                     item_tra.text(0),
-                    item_tra.parent().text(0),
-                    item_tra.parent().parent().text(0),
+                    text_0,
+                    text_1,
                 )
 
     def set_regions(self, listRegion):

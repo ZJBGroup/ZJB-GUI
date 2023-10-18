@@ -24,7 +24,7 @@ class BrainRegionsPanel(QWidget):
             self.ui.TitleLabel.setText(atlas.name)
             self.get_select_all()
         else:
-            i = 0
+            i = 1
             _dict = {}
             dict_labels = {}
             for label in atlas.labels:

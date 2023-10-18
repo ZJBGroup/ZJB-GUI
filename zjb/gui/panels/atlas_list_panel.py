@@ -62,7 +62,11 @@ class AtlasInterface(ScrollArea):
 
         GLOBAL_SIGNAL.requestAddPage.emit(
             Atlas_Surface_Page(
-                "Atlas", "Atlas", FluentIcon.DOCUMENT, select_atlas, select_subject
+                select_atlas.name,
+                select_atlas.name + " Surface Visualization",
+                FluentIcon.DOCUMENT,
+                select_atlas,
+                select_subject,
             )
         )
 

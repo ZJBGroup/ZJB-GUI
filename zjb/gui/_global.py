@@ -1,3 +1,5 @@
+import os
+
 from PyQt5.QtCore import QObject, pyqtSignal
 from zjb.doj.lmdb_job_manager import LMDBJobManager
 from zjb.main.manager.workspace import Workspace
@@ -9,7 +11,7 @@ class _GlobalSignal(QObject):
     # 全局工作空间发生变化
     workspaceChanged = pyqtSignal([], [Workspace])
 
-    requestAddPage = pyqtSignal(BasePage)
+    requestAddPage = pyqtSignal(str, object)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()
@@ -34,19 +36,31 @@ def get_workspace() -> "Workspace | None":
     return _workspace
 
 
-def open_workspace(path: str):
+def open_workspace(path: str, worker_count=0):
     """打开一个工作空间作为全局工作空间
 
     Parameters
     ----------
     path : str
         要打开的工作空间的路径
+
+    worker_count : int
+        表示需要启动的worker数量，如果为0则表示新建一个worker
     """
     global _workspace
+
+    _worker_count = worker_count
+    if _worker_count == 0:
+        # 获取本机CPU核数，结合配置文件 配置默认的 Worker 数量
+        default_count = 5
+        _worker_count = (
+            default_count if os.cpu_count() > default_count else os.cpu_count()
+        )
 
     jm = LMDBJobManager(path=path)
     _workspace = Workspace.from_manager(jm)
     _workspace.name = path.split("/")[len(path.split("/")) - 1]
+    _workspace.start_workers(_worker_count)
     GLOBAL_SIGNAL.workspaceChanged[Workspace].emit(_workspace)
 
 

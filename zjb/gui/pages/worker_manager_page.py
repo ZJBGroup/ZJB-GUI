@@ -23,15 +23,12 @@ from qfluentwidgets import (
     SpinBox,
     SubtitleLabel,
 )
+from zjb.doj.worker import Worker
+from zjb.main.manager.workspace import Workspace
 
+from .._global import GLOBAL_SIGNAL
 from ..common.utils import show_error
 from .base_page import BasePage
-
-# from zjb.doj.lmdb_job_manager import LMDBJobManager
-
-
-# from zjb.base.process_job_manager import ProcessWorker
-# from zjb.main.workspace import Workspace
 
 
 class ProcessWorker:
@@ -50,14 +47,14 @@ class WorkerCard(CardWidget):
 
     _workerStateChangedSignal = pyqtSignal(ProcessWorker)  # Worker 状态发生变化时候的信号
 
-    def __init__(self, item: ProcessWorker, index, parent=None):
+    def __init__(self, item: Worker, index, parent=None):
         super().__init__(parent)
         self.setFixedHeight(CardSize.HEIGHT)
         self.setFixedWidth(CardSize.WIDTH)
         # 绑定对应Worker的数据
         self._worker = item
-        self._state = item.state
-        self._content = f"State：\t\t{self._state.name.lower()}"
+        self._state = "waiting" if item.is_idel() else "working"
+        self._content = f"State：\t\t{self._state}"
         # 标题
         self.titleLabel = BodyLabel(f"{index}-Worker", self)
         self.titleLabel.setObjectName("WorkerTitle")
@@ -68,12 +65,12 @@ class WorkerCard(CardWidget):
         self.stateLabel.setFixedHeight(18)
         self.stateLabel.setAlignment(Qt.AlignTop)
         # cpu 信息
-        self.cpuLabel = CaptionLabel("Process：\t0% \nCPU：\t\t0%", self)
+        self.cpuLabel = CaptionLabel("Memory：\t0% \nCPU：\t\t0%", self)
         self.cpuLabel.setTextColor("#606060", "#d2d2d2")
         self.cpuLabel.setWordWrap(True)
         self.cpuLabel.setFixedHeight(33)
         self.cpuLabel.setAlignment(Qt.AlignTop)
-        self.psutil_process = psutil.Process(self._worker._process.pid)
+        self.psutil_process = psutil.Process(self._worker.process.pid)
         # 运行中的 Job 信息
         self.jobLabel = CaptionLabel("Job：\t\tNone", self)
         self.jobLabel.setTextColor("#606060", "#d2d2d2")
@@ -101,11 +98,10 @@ class WorkerCard(CardWidget):
         self.outer_layout.addLayout(self.button_Layout)
         self.outer_layout.addLayout(self.content_Layout)
         self._setIdle()
-        if self._state.name.lower() == "starting":
-            self.setStyleSheet("#WorkerTitle{color:grey;font-size:20pt}")
 
         # 监测状态的变化 当 'state' 发生变化的时候，调用 self._stateChanged
-        self._worker.observe(self._stateChanged, "state", dispatch="same")
+        # self._worker.observe(self._stateChanged, "state", dispatch="same")
+        # TODO: 监测 worker 状态
 
     def _setWorking(self):
         """将UI样式设置为工作中的状态"""
@@ -180,9 +176,9 @@ class WorkerPanel(SmoothScrollArea):
 
         # 按钮
         self.primaryToolButton = PrimaryPushButton(
-            "Delete Free", self, FluentIcon.DELETE
+            "Delete Idle", self, FluentIcon.DELETE
         )
-        self.primaryToolButton.clicked.connect(self._deleteFreeProcess)
+        self.primaryToolButton.clicked.connect(self._deleteIdelProcess)
 
         # 允许的最大数目的 badge
         self.max_badge = InfoBadge.attension(f"Max:{self.max_card_num}")
@@ -194,8 +190,8 @@ class WorkerPanel(SmoothScrollArea):
         self.busy_badge = InfoBadge.error("Busy:0")
         self.busy_badge.setFont(QFont("", 14, QFont.Weight.Normal))
         # 空闲的 badge
-        self.free_badge = InfoBadge.success("Free:0")
-        self.free_badge.setFont(QFont("", 14, QFont.Weight.Normal))
+        self.idel_badge = InfoBadge.success("Idel:0")
+        self.idel_badge.setFont(QFont("", 14, QFont.Weight.Normal))
 
         # 工具栏布局
         self.toolsBar.addWidget(self.spinBox)
@@ -204,7 +200,7 @@ class WorkerPanel(SmoothScrollArea):
         self.toolsBar.addWidget(self.max_badge)
         self.toolsBar.addWidget(self.all_badge)
         self.toolsBar.addWidget(self.busy_badge)
-        self.toolsBar.addWidget(self.free_badge)
+        self.toolsBar.addWidget(self.idel_badge)
 
         # workerCard 布局
         self.card_layout = FlowLayout(needAni=True)
@@ -232,34 +228,41 @@ class WorkerPanel(SmoothScrollArea):
                 for i in range(self.card_layout.count()):
                     item = self.card_layout.itemAt(i)
                     pInformation = item.widget().getPsutilProcess()
-                    pText = f"Process：\t{ round(pInformation.memory_percent(),4) }%"
+                    pText = f"Memory：\t{ round(pInformation.memory_percent(),4) }%"
                     cpuText = f"CPU：\t\t{ round(pInformation.cpu_percent(),4)}%"
                     item.widget().setCpuInfo(f"{pText}\n{cpuText}")
 
         self.cpuThread = Thread(target=updateCPUInfo, daemon=True)
         self.cpuThread.start()
 
-    # def setWorkspace(self, workspace: typing.Optional[Workspace]):
-    #     """
-    #     设置工作空间，同步相应的数据
-    #     :param: workspace: 一个工作空间
-    #     """
-    #     self._workspace = workspace
-    #     self.spinBox.setDisabled(False)
-    #     # 保证在首页切换工作空间的时候 清除列表中之前的卡片
-    #     self.card_layout.takeAllWidgets()
-    #     initWorkers = self._workspace.jm.workers
-    #     for item in initWorkers:
-    #         self._addCard(item)
-    #     self.card_layout.setGeometry(self.card_layout.geometry())  # 处理元素堆叠问题
-    #     self.other_workers = self._workspace.jm.workers
-    #     self.busy_workers = []
-    #     self._updateToolsBar(
-    #         count=len(self._workspace.jm.workers),
-    #         all_num=len(self._workspace.jm.workers),
-    #     )
+        GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
 
-    def _deleteFreeProcess(self):
+    def setWorkspace(self, workspace: Workspace):
+        """
+        设置工作空间，同步相应的数据
+        :param: workspace: 一个工作空间
+        """
+        self._workspace = workspace
+        print("worker setWorkspace", workspace)
+
+        if not self._workspace == None:
+            self._workspace.observe(print, "workers.items", dispatch="same")
+            self.spinBox.setDisabled(False)
+            # 保证在首页切换工作空间的时候 清除列表中之前的卡片
+            self.card_layout.takeAllWidgets()
+            initWorkers = self._workspace.workers
+            for item in initWorkers:
+                self._addCard(item)
+            self.card_layout.setGeometry(self.card_layout.geometry())  # 处理元素堆叠问题
+            self.other_workers = self._workspace.workers
+            self.busy_workers = []
+            self._updateToolsBar(
+                count=len(self._workspace.workers),
+                idel_num=len(self.other_workers),
+                all_num=len(self._workspace.workers),
+            )
+
+    def _deleteIdelProcess(self):
         """清除所有空闲的进程"""
         delItem = []
         for item in self.other_workers:
@@ -268,7 +271,7 @@ class WorkerPanel(SmoothScrollArea):
             self._deleteProcessWorker(item)
         self._updateToolsBar(
             count=len(self.busy_workers),
-            free_num=len(self.other_workers),
+            idel_num=len(self.other_workers),
             all_num=len(self.busy_workers),
         )
 
@@ -302,15 +305,15 @@ class WorkerPanel(SmoothScrollArea):
                 for item in delItem:
                     if item in self.other_workers:
                         self.other_workers.remove(item)
-                self._updateToolsBar(free_num=len(self.other_workers))
+                self._updateToolsBar(idel_num=len(self.other_workers))
 
-    def _updateToolsBar(self, count=None, all_num=None, busy_num=None, free_num=None):
+    def _updateToolsBar(self, count=None, all_num=None, busy_num=None, idel_num=None):
         """
         更新工具栏中的各项数据
         :param: count: spinBox中的可编辑的数据
         :param: all_num: badge中的总数
         :param: busy_num: badge中运行中的进程数
-        :param: free_num: badge中的空闲进程数
+        :param: idel_num: badge中的空闲进程数
         """
         if not count == None:
             self.spinBox.setValue(count)
@@ -318,8 +321,8 @@ class WorkerPanel(SmoothScrollArea):
             self.all_badge.setText(f"All:{all_num}")
         if not busy_num == None:
             self.busy_badge.setText(f"Busy:{busy_num}")
-        if not free_num == None:
-            self.free_badge.setText(f"Free:{free_num}")
+        if not idel_num == None:
+            self.idel_badge.setText(f"Idel:{idel_num}")
 
     def _upButtonClicked(self):
         """点击 spinBox 的向上按钮"""
@@ -329,6 +332,8 @@ class WorkerPanel(SmoothScrollArea):
             if int(self.card_layout.count()) == self.max_card_num:
                 show_error("Unable to add more processes", self.window())
             else:
+                self._workspace.start_workers(1)
+                return
                 newWorker = ProcessWorker(manager=self._workspace.jm)
                 newWorker.start()
                 self._workspace.jm.workers.append(newWorker)
@@ -343,19 +348,20 @@ class WorkerPanel(SmoothScrollArea):
     def _downButtonClicked(self):
         """点击 spinBox 的向下按钮"""
         if len(self.other_workers) == 0:
-            show_error("No Free Process can be deleted", self.window())
+            show_error("No Idel Process can be deleted", self.window())
             self._updateToolsBar(count=len(self.busy_workers))
         else:
+            return
             delworker = self.other_workers[len(self.other_workers) - 1]
             self._deleteProcessWorker(delworker)
             if delworker in self.other_workers:
                 self.other_workers.remove(delworker)
             self._updateToolsBar(
                 all_num=len(self.busy_workers) + len(self.other_workers),
-                free_num=len(self.other_workers),
+                idel_num=len(self.other_workers),
             )
 
-    def _addCard(self, item: ProcessWorker):
+    def _addCard(self, item: Worker):
         """
         在界面上添加一个表示Worker的卡片
         :param: item: 一个Worker的进程
@@ -370,6 +376,7 @@ class WorkerPanel(SmoothScrollArea):
         :param: worker: 一个Worker的信息
         """
         # worker.terminate()
+        return
         tempItem = worker
         self._workspace.jm.workers.remove(worker)
         self.workerCountChanged.emit(len(self.busy_workers) + len(self.other_workers))
@@ -391,23 +398,25 @@ class WorkerPanel(SmoothScrollArea):
         )
         self.deleteThread.start()
 
-    def _stateChanged(self, worker: ProcessWorker):
+    def _stateChanged(self, worker: Worker):
         """
         每一个 worker 发生变化的时候，更新工具栏相应的数据
         :param: worker: 一个Worker的信息
         """
-        if str(worker.state.name) == "WORKING":
+        if not worker.is_idel():
+            # 忙碌
             if not worker in self.busy_workers:
                 self.busy_workers.append(worker)
             if worker in self.other_workers:
                 self.other_workers.remove(worker)
-        elif str(worker.state.name) == "WAITING":
+        elif worker.is_idel():
+            # 空闲
             if worker in self.busy_workers:
                 self.busy_workers.remove(worker)
             if not worker in self.other_workers:
                 self.other_workers.append(worker)
         self._updateToolsBar(
-            busy_num=len(self.busy_workers), free_num=len(self.other_workers)
+            busy_num=len(self.busy_workers), idel_num=len(self.other_workers)
         )
 
     def _updateIndex(self):

@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 from qfluentwidgets import Dialog, Pivot, TableWidget
+from zjb.main.manager.workspace import Workspace
 
 from .base_page import BasePage
 
@@ -132,12 +133,14 @@ class JobListPage(BasePage):
         widget = self.stackedWidget.widget(index)
         self.pivot.setCurrentItem(widget.objectName())
 
-    # def setWorkspace(self, workspace: typing.Optional[Workspace]):
-    #     """
-    #     设置并同步工作空间数据
-    #     :param: workspace: 工作空间数据
-    #     """
-    #     self._workspace = workspace
+    def setWorkspace(self, workspace: Workspace):
+        """
+        设置并同步工作空间数据
+        :param: workspace: 工作空间数据
+        """
+        self._workspace = workspace
+        print("job setWorkspace")
+
     #     self._sync_table()
     #     self._sync_layout(self.all_job_table)
     #     self._sync_layout(self.running_job_table)

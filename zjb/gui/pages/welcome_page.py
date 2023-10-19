@@ -25,7 +25,7 @@ class StartPanel(QtWidgets.QWidget):
     def __init__(self, text: str, worker_count, parent=None):
         super().__init__(parent)
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
-        self._worker_count = worker_count
+        # self._worker_count = worker_count
         # 左侧 start label
         self.left_panel = QtWidgets.QWidget(self)
         self.left_panel.setMaximumWidth(200)
@@ -88,7 +88,7 @@ class StartPanel(QtWidgets.QWidget):
                 len(workspace_path.split("/")) - 1
             ]
             get_worker_count = sync_recent_config(workspace_name, workspace_path)
-            open_workspace(workspace_path)
+            open_workspace(workspace_path, get_worker_count)
 
     def _sync_listWidget(self):
         """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
@@ -107,7 +107,7 @@ class RecentPanel(QtWidgets.QWidget):
 
     def __init__(self, text: str, worker_count, parent=None):
         super().__init__(parent)
-        self._worker_count = worker_count
+        # self._worker_count = worker_count
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
         self.left_panel = QtWidgets.QWidget(self)
         self.left_panel.setMaximumWidth(200)

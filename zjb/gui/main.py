@@ -21,7 +21,6 @@ from qfluentwidgets import (
     TabBar,
     TabCloseButtonDisplayMode,
 )
-
 from zjb.gui._global import GLOBAL_SIGNAL
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
@@ -92,9 +91,12 @@ class WinInterface(ScrollArea):
         self.win_panel_layout.addWidget(self.tabBar)
         self.win_panel_layout.addWidget(self.stackedWindows)
         self.horizontalLayout.addWidget(self.win_panel)
+        self.addPage("Welcome", self._addWelcomePage)
 
-        self.welcome_page = WelcomePage("Welcome", "Welcome", FluentIcon.HOME)
-        self.addPage(self.welcome_page)
+    def _addWelcomePage(self, routeKey: str):
+        """新建欢迎页面的回调函数"""
+        welcome_page = WelcomePage(routeKey, "Welcome", FluentIcon.HOME)
+        return welcome_page
 
     def canDrag(self, pos: QPoint):
         """tab拖拽方法"""
@@ -127,14 +129,20 @@ class WinInterface(ScrollArea):
         self.stackedWindows.setCurrentWidget(page)
         self.tabBar.setCurrentTab(page.getRouteKey())
 
-    def addPage(self, page: BasePage):
+    def addPage(self, routeKey: str, callback):
+        """在层叠窗口区增加一个窗口
+
+        Parameters:
+        ----------
+        routeKey: str
+            增加窗口的唯一标识 routeKey
+        callback: function
+            用于创建窗口的回调函数
         """
-        层叠窗口区域新增加一个页面
-        :param: page: Tab对应的页面
-        """
-        flag = self.findChild(BasePage, name=page.getRouteKey())
+        flag = self.findChild(BasePage, name=routeKey)
         # 若该页面已打开则直接跳转到该页面
         if flag == None:
+            page: BasePage = callback(routeKey)
             self.stackedWindows.addWidget(page)
             self.tabBar.addTab(page.getRouteKey(), page.getTitle(), page.getIcon())
             flag = page
@@ -191,9 +199,17 @@ class MainWindow(FluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
-    def addPage(self, page: BasePage):
-        """在层叠窗口区增加一个窗口"""
-        self.widgetWindows.addPage(page)
+    def addPage(self, routeKey: str, callback):
+        """调用子组件的方法，在层叠窗口区增加一个窗口
+
+        Parameters:
+        ----------
+        routeKey: str
+            增加窗口的唯一标识 routeKey
+        callback: function
+            用于创建窗口的回调函数
+        """
+        self.widgetWindows.addPage(routeKey, callback)
 
     def initNavigation(self):
         """初始化左侧导航栏"""
@@ -232,6 +248,8 @@ class MainWindow(FluentWindow):
         self._work_space = workspace
         print("self._work_space==============", self._work_space.name)
         self.dynamicModelInterface.setWorkspace(workspace)
+        self.jobManagerInterface.setWorkspace(workspace)
+        # print(self._work_space.workers)
 
         # self.workspace_page.setWorkspace(workspace)
         # self.job_page.setWorkspace(workspace)

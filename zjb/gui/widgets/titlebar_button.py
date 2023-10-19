@@ -2,7 +2,7 @@
 import json
 import os
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QWidget
 from qfluentwidgets import (
     Action,
@@ -53,17 +53,13 @@ class OpenButton(TransparentDropDownPushButton):
         super().__init__()
         self.setText(name)
         self.openMenu = RoundMenu(parent=self)
-
         self.openMenu.addAction(
             Action(FluentIcon.FOLDER, "WorkSpace", triggered=self._open_workspace)
         )
         self.openMenu.addSeparator()
-
         self.recent_list = RecentWorkspaceList(self, "title")
+        self.recent_list.recentWorkspaceClick.connect(lambda: self.openMenu.close())
         self.openMenu.addWidget(self.recent_list, selectable=False)
-
-        self.openMenu.addSection("123")
-
         self.setMenu(self.openMenu)
 
     def _open_workspace(self):
@@ -76,7 +72,7 @@ class OpenButton(TransparentDropDownPushButton):
                 len(workspace_path.split("/")) - 1
             ]
             get_worker_count = sync_recent_config(workspace_name, workspace_path)
-            open_workspace(workspace_path)
+            open_workspace(workspace_path, get_worker_count)
 
 
 class RecentWorkspaceItem(QListWidgetItem):
@@ -99,6 +95,8 @@ class RecentWorkspaceItem(QListWidgetItem):
 
 class RecentWorkspaceList(QWidget):
     """RecentList"""
+
+    recentWorkspaceClick = pyqtSignal()
 
     def __init__(self, parent=None, position="welcome"):
         super().__init__(parent=parent)
@@ -134,13 +132,14 @@ class RecentWorkspaceList(QWidget):
         w_name = item.getWorkspaceName()
         if os.path.exists(w_path):
             get_worker_count = sync_recent_config(w_name, w_path)
-            open_workspace(w_path)
+            open_workspace(w_path, get_worker_count)
         else:
             # 未找到文件
             sync_recent_config(w_name, w_path, state="del")
             show_error("workspace not find", self.window())
         self._sync_recent_list()
         self.listWidget.clearSelection()
+        self.recentWorkspaceClick.emit()
 
     def _sync_recent_list(self):
         """每一次内容有修改之后更新整个 最近打开 的列表"""

@@ -4,16 +4,8 @@ from time import sleep
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEasingCurve, Qt, pyqtSignal
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import (
-    FlowLayout,
-    FluentIcon,
-    InfoBadge,
-    PrimaryPushButton,
-    SmoothScrollArea,
-    SpinBox,
-)
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
+from qfluentwidgets import FlowLayout, SmoothScrollArea
 from zjb.doj.worker import Worker
 from zjb.main.manager.workspace import Workspace
 
@@ -21,6 +13,7 @@ from .._global import GLOBAL_SIGNAL
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
 from ..widgets.worker_card import WorkerCard
+from ..widgets.worker_tools_bar import WorkerToolsBar
 from .base_page import BasePage
 
 
@@ -37,46 +30,12 @@ class WorkerPanel(SmoothScrollArea):
         self.busy_workers = []  # 存放忙碌中的 worker
         self.other_workers = []  # 存放非忙碌的 worker
 
-        # 工具栏布局
-        self.toolsBar = QHBoxLayout()
-        self.toolsBar.setAlignment(Qt.AlignLeft)
-        self.toolsBar.setSpacing(10)
-
-        # 自定义增减板块
-        self.spinBox = SpinBox()
-        self.spinBox.setMaximum(self.max_card_num)
-        self.spinBox.setDisabled(True)
-        self.spinBox.editingFinished.connect(self._spinBoxChanged)
-        self.spinBox.upButton.clicked.connect(self._upButtonClicked)
-        self.spinBox.downButton.clicked.connect(self._downButtonClicked)
-
-        # 按钮
-        self.primaryToolButton = PrimaryPushButton(
-            "Delete Idle", self, FluentIcon.DELETE
-        )
-        self.primaryToolButton.clicked.connect(self._deleteIdelProcess)
-
-        # 允许的最大数目的 badge
-        self.max_badge = InfoBadge.attension(f"Max:{self.max_card_num}")
-        self.max_badge.setFont(QFont("", 14, QFont.Weight.Normal))
-        # 总数的 badge
-        self.all_badge = InfoBadge.custom("All:0", "#005fb8", "#60cdff")
-        self.all_badge.setFont(QFont("", 14, QFont.Weight.Normal))
-        # 忙碌的 badge
-        self.busy_badge = InfoBadge.error("Busy:0")
-        self.busy_badge.setFont(QFont("", 14, QFont.Weight.Normal))
-        # 空闲的 badge
-        self.idel_badge = InfoBadge.success("Idel:0")
-        self.idel_badge.setFont(QFont("", 14, QFont.Weight.Normal))
-
-        # 工具栏布局
-        self.toolsBar.addWidget(self.spinBox)
-        self.toolsBar.addWidget(self.primaryToolButton)
-        self.toolsBar.addStretch()
-        self.toolsBar.addWidget(self.max_badge)
-        self.toolsBar.addWidget(self.all_badge)
-        self.toolsBar.addWidget(self.busy_badge)
-        self.toolsBar.addWidget(self.idel_badge)
+        # 工具栏
+        self.toolsBar = WorkerToolsBar(self.max_card_num)
+        self.toolsBar.spinBox.editingFinished.connect(self._spinBoxChanged)
+        self.toolsBar.spinBox.upButton.clicked.connect(self._upButtonClicked)
+        self.toolsBar.spinBox.downButton.clicked.connect(self._downButtonClicked)
+        self.toolsBar.primaryToolButton.clicked.connect(self._deleteIdelProcess)
 
         # workerCard 布局
         self.card_layout = FlowLayout(needAni=True)
@@ -93,7 +52,7 @@ class WorkerPanel(SmoothScrollArea):
         self.setWidget(self.container)
         self.setWidgetResizable(True)
         self.main_layout = QVBoxLayout(self.container)
-        self.main_layout.addLayout(self.toolsBar)
+        self.main_layout.addWidget(self.toolsBar)
         self.main_layout.addWidget(self.card_layout_container)
         self.main_layout.setAlignment(Qt.AlignTop)
 
@@ -132,7 +91,7 @@ class WorkerPanel(SmoothScrollArea):
             self._workspace.observe(
                 self._workersNumChanged, "workers.items", dispatch="same"
             )
-            self.spinBox.setDisabled(False)
+            self.toolsBar.setSpinBoxDisabled(False)
             # 保证在首页切换工作空间的时候 清除列表中之前的卡片
             self.card_layout.takeAllWidgets()
             init_workers = self._workspace.workers
@@ -194,7 +153,6 @@ class WorkerPanel(SmoothScrollArea):
         """
         card = WorkerCard(item, self.card_layout.count() + 1)
         self.card_layout.addWidget(card)
-        # card._workerStateChangedSignal.connect(self._stateChanged)
 
     def _deleteCard(self, worker: Worker):
         """
@@ -239,14 +197,7 @@ class WorkerPanel(SmoothScrollArea):
         :param: busy_num: badge中运行中的进程数
         :param: idel_num: badge中的空闲进程数
         """
-        if not count == None:
-            self.spinBox.setValue(count)
-        if not all_num == None:
-            self.all_badge.setText(f"All:{all_num}")
-        if not busy_num == None:
-            self.busy_badge.setText(f"Busy:{busy_num}")
-        if not idel_num == None:
-            self.idel_badge.setText(f"Idel:{idel_num}")
+        self.toolsBar.updateToolsBar(count, all_num, busy_num, idel_num)
 
     def _updateIndex(self):
         # 更新卡片的 索引
@@ -257,43 +208,22 @@ class WorkerPanel(SmoothScrollArea):
     def _spinBoxChanged(self):
         """spinBox 手动输入完成以后"""
         _all_num = len(self.busy_workers) + len(self.other_workers)
-        if int(self.spinBox.text()) > _all_num:
+        input_num = self.toolsBar.getSpinBoxNum()
+        if input_num > _all_num:
             # 此时需要增加更多的 card
-            self._workspace.start_workers(int(self.spinBox.text()) - _all_num)
-        elif int(self.spinBox.text()) < _all_num:
+            self._workspace.start_workers(input_num - _all_num)
+        elif input_num < _all_num:
             # 此时需要删除多余的 card
-            diff = _all_num - int(self.spinBox.text())
+            diff = _all_num - input_num
             busy_num = len(self.busy_workers)
-            if int(self.spinBox.text()) < busy_num:
+            if input_num < busy_num:
                 # 设置的数量 超过正在运行的进程数
                 show_error(
-                    f"Over {self.spinBox.text()} Processes are WORKING", self.window()
+                    f"Over {input_num} Processes are WORKING",
+                    self.window(),
                 )
             else:
                 self._workspace.remove_idel_workers(diff)
-
-    def _stateChanged(self, worker: Worker):
-        """
-        每一个 worker 发生变化的时候，更新工具栏相应的数据
-        :param: worker: 一个Worker的信息
-        TODO:
-        """
-        return
-        if not worker.is_idel():
-            # 忙碌
-            if not worker in self.busy_workers:
-                self.busy_workers.append(worker)
-            if worker in self.other_workers:
-                self.other_workers.remove(worker)
-        elif worker.is_idel():
-            # 空闲
-            if worker in self.busy_workers:
-                self.busy_workers.remove(worker)
-            if not worker in self.other_workers:
-                self.other_workers.append(worker)
-        self._updateToolsBar(
-            busy_num=len(self.busy_workers), idel_num=len(self.other_workers)
-        )
 
 
 class WorkerManagerPage(BasePage):

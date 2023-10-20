@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 import psutil
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     BodyLabel,
@@ -21,8 +21,6 @@ class CardSize(IntEnum):
 
 class WorkerCard(CardWidget):
     """用来表示一个 Worker 的卡片"""
-
-    _workerStateChangedSignal = pyqtSignal(Worker)  # Worker 状态发生变化时候的信号
 
     def __init__(self, item: Worker, index, parent=None):
         super().__init__(parent)
@@ -76,9 +74,6 @@ class WorkerCard(CardWidget):
         self.outer_layout.addLayout(self.content_Layout)
         self._setIdle()
 
-        # 监测状态的变化 当 'sem' 发生变化的时候，调用 self._stateChanged
-        # self._worker.observe(self._stateChanged, "sem", dispatch="same")
-
     def _setWorking(self):
         """将UI样式设置为工作中的状态"""
         self.progressRing.setVisible(True)
@@ -88,18 +83,6 @@ class WorkerCard(CardWidget):
         """将UI样式设置为空闲的状态"""
         self.progressRing.setVisible(False)
         self.setStyleSheet("#WorkerTitle{color:green;font-size:20pt}")
-
-    # def _stateChanged(self, _):
-    #     """更新卡片的内容"""
-    #     if not self._worker.is_idel():
-    #         self._setWorking()
-    #         self.jobLabel.setText(f"Job：\n{self._worker.manager.jobiter()}")
-    #     else:
-    #         self._setIdle()
-    #         self.jobLabel.setText("Job：\t\tNone")
-    #     self._content = f"State：\t\t{self._worker.sem }"
-    #     self.stateLabel.setText(self._content)
-    #     self._workerStateChangedSignal.emit(self._worker)
 
     def setState(self, state):
         """

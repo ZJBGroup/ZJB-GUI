@@ -1,151 +1,27 @@
 import os
-import typing
-from enum import IntEnum
 from threading import Thread
 from time import sleep
 
-import psutil
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEasingCurve, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel,
-    CaptionLabel,
-    CardWidget,
     FlowLayout,
     FluentIcon,
-    IconWidget,
-    IndeterminateProgressRing,
     InfoBadge,
     PrimaryPushButton,
     SmoothScrollArea,
     SpinBox,
-    SubtitleLabel,
 )
 from zjb.doj.worker import Worker
 from zjb.main.manager.workspace import Workspace
 
 from .._global import GLOBAL_SIGNAL
+from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
+from ..widgets.worker_card import WorkerCard
 from .base_page import BasePage
-
-
-class ProcessWorker:
-    ...
-
-
-class CardSize(IntEnum):
-    """卡片的尺寸"""
-
-    WIDTH = 260
-    HEIGHT = 150
-
-
-class WorkerCard(CardWidget):
-    """用来表示一个 Worker 的卡片"""
-
-    _workerStateChangedSignal = pyqtSignal(ProcessWorker)  # Worker 状态发生变化时候的信号
-
-    def __init__(self, item: Worker, index, parent=None):
-        super().__init__(parent)
-        self.setFixedHeight(CardSize.HEIGHT)
-        self.setFixedWidth(CardSize.WIDTH)
-        # 绑定对应Worker的数据
-        self._worker = item
-        self._state = "waiting" if item.is_idel() else "working"
-        self._content = f"State：\t\t{self._state}"
-        # 标题
-        self.titleLabel = BodyLabel(f"{index}-Worker", self)
-        self.titleLabel.setObjectName("WorkerTitle")
-        # 状态信息
-        self.stateLabel = CaptionLabel(self._content, self)
-        self.stateLabel.setTextColor("#606060", "#d2d2d2")
-        self.stateLabel.setWordWrap(True)
-        self.stateLabel.setFixedHeight(18)
-        self.stateLabel.setAlignment(Qt.AlignTop)
-        # cpu 信息
-        self.cpuLabel = CaptionLabel("Memory：\t0% \nCPU：\t\t0%", self)
-        self.cpuLabel.setTextColor("#606060", "#d2d2d2")
-        self.cpuLabel.setWordWrap(True)
-        self.cpuLabel.setFixedHeight(33)
-        self.cpuLabel.setAlignment(Qt.AlignTop)
-        self.psutil_process = psutil.Process(self._worker.process.pid)
-        # 运行中的 Job 信息
-        self.jobLabel = CaptionLabel("Job：\t\tNone", self)
-        self.jobLabel.setTextColor("#606060", "#d2d2d2")
-        self.jobLabel.setWordWrap(True)
-        self.jobLabel.setFixedHeight(40)
-        self.jobLabel.setAlignment(Qt.AlignTop)
-        # 第一行布局
-        self.button_Layout = QHBoxLayout()
-        self.button_Layout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
-        # 进度环
-        self.progressRing = IndeterminateProgressRing(self)
-        self.progressRing.setFixedSize(25, 25)
-        self.button_Layout.addWidget(self.progressRing, 0, Qt.AlignRight)
-        # 文字内容布局
-        self.content_Layout = QVBoxLayout()
-        self.content_Layout.setSpacing(0)
-        self.content_Layout.setContentsMargins(0, 0, 0, 0)
-        self.content_Layout.addWidget(self.stateLabel, 0, Qt.AlignTop)
-        self.content_Layout.addWidget(self.cpuLabel, 0, Qt.AlignTop)
-        self.content_Layout.addWidget(self.jobLabel, 0, Qt.AlignTop)
-        self.content_Layout.setAlignment(Qt.AlignTop)
-        # 整体布局
-        self.outer_layout = QVBoxLayout(self)
-        self.outer_layout.setContentsMargins(20, 11, 11, 11)
-        self.outer_layout.addLayout(self.button_Layout)
-        self.outer_layout.addLayout(self.content_Layout)
-        self._setIdle()
-
-        # 监测状态的变化 当 'state' 发生变化的时候，调用 self._stateChanged
-        # self._worker.observe(self._stateChanged, "state", dispatch="same")
-        # TODO: 监测 worker 状态
-
-    def _setWorking(self):
-        """将UI样式设置为工作中的状态"""
-        self.progressRing.setVisible(True)
-        self.setStyleSheet("#WorkerTitle{color:red;font-size:20pt}")
-
-    def _setIdle(self):
-        """将UI样式设置为空闲的状态"""
-        self.progressRing.setVisible(False)
-        self.setStyleSheet("#WorkerTitle{color:green;font-size:20pt}")
-
-    def _stateChanged(self, _):
-        """更新卡片的内容"""
-        if str(self._worker.state.name) == "WORKING":
-            self._setWorking()
-            self.jobLabel.setText(f"Job：\n{self._worker._job.gid}")
-        else:
-            self._setIdle()
-            self.jobLabel.setText("Job：\t\tNone")
-        self._content = f"State：\t\t{self._worker.state.name.lower() }"
-        self.stateLabel.setText(self._content)
-        self._workerStateChangedSignal.emit(self._worker)
-
-    def setCpuInfo(self, info):
-        """
-        修改卡片中的 CPU 信息
-        :param: info: 新的CPU信息
-        """
-        self.cpuLabel.setText(info)
-
-    def setTitle(self, index):
-        """
-        修改卡片中的 Title 信息
-        :param: index: 当前卡片的索引
-        """
-        self.titleLabel.setText(f"{index}-Worker")
-
-    def getWorker(self):
-        """获取当前的 Worker"""
-        return self._worker
-
-    def getPsutilProcess(self):
-        """获取当前的 psutil_process 实例"""
-        return self.psutil_process
 
 
 class WorkerPanel(SmoothScrollArea):
@@ -228,9 +104,17 @@ class WorkerPanel(SmoothScrollArea):
                 for i in range(self.card_layout.count()):
                     item = self.card_layout.itemAt(i)
                     pInformation = item.widget().getPsutilProcess()
-                    pText = f"Memory：\t{ round(pInformation.memory_percent(),4) }%"
-                    cpuText = f"CPU：\t\t{ round(pInformation.cpu_percent(),4)}%"
-                    item.widget().setCpuInfo(f"{pText}\n{cpuText}")
+                    _memory = round(pInformation.memory_percent(), 4)
+                    _cpu = round(pInformation.cpu_percent(), 4)
+                    item.widget().setCpuInfo(_memory, _cpu)
+                    if item.widget().getWorker().is_idel():
+                        if not item.widget().getWorker() in self.other_workers:
+                            self.other_workers.append(item.widget().getWorker())
+                            self.busy_workers.remove(item.widget().getWorker())
+                    else:
+                        if not item.widget().getWorker() in self.busy_workers:
+                            self.busy_workers.append(item.widget().getWorker())
+                            self.other_workers.remove(item.widget().getWorker())
 
         self.cpuThread = Thread(target=updateCPUInfo, daemon=True)
         self.cpuThread.start()
@@ -243,69 +127,109 @@ class WorkerPanel(SmoothScrollArea):
         :param: workspace: 一个工作空间
         """
         self._workspace = workspace
-        print("worker setWorkspace", workspace)
-
         if not self._workspace == None:
-            self._workspace.observe(print, "workers.items", dispatch="same")
+            # 监听 workers 数量的变化
+            self._workspace.observe(
+                self._workersNumChanged, "workers.items", dispatch="same"
+            )
             self.spinBox.setDisabled(False)
             # 保证在首页切换工作空间的时候 清除列表中之前的卡片
             self.card_layout.takeAllWidgets()
-            initWorkers = self._workspace.workers
-            for item in initWorkers:
+            init_workers = self._workspace.workers
+            self.other_workers = []
+            self.busy_workers = []
+            for item in init_workers:
+                self.other_workers.append(item)
                 self._addCard(item)
             self.card_layout.setGeometry(self.card_layout.geometry())  # 处理元素堆叠问题
-            self.other_workers = self._workspace.workers
-            self.busy_workers = []
+
             self._updateToolsBar(
                 count=len(self._workspace.workers),
                 idel_num=len(self.other_workers),
                 all_num=len(self._workspace.workers),
             )
 
+    def _workersNumChanged(self, detail):
+        """监听 Worker 数量发生变化时候的回调函数
+
+        Parameters:
+        ----------
+        detail: str
+            变化的具体内容
+        """
+        [_object, _index, _removed, _added] = [
+            detail.object,
+            detail.index,
+            detail.removed,
+            detail.added,
+        ]
+        if not _added == []:
+            for item in _added:
+                self._addCard(item)
+                self.other_workers.append(item)
+
+        if not _removed == []:
+            for item in _removed:
+                self._deleteCard(item)
+                self.other_workers.remove(item)
+        self._updateToolsBar(
+            count=len(_object), idel_num=len(self.other_workers), all_num=len(_object)
+        )
+        self.card_layout.setGeometry(self.card_layout.geometry())
+
+    def _configWorkerCount(self, worker_count):
+        """
+        新增、删除 Worker 的时候 更新本地配置文件
+        :param: worker_count: worker数目
+        """
+        return
+        path = self._workspace.dm.path.replace("\\", "/")
+        name = path.split("/")[len(path.split("/")) - 1].replace(".lmdb", "")
+        sync_recent_config(name, path, worker_count)
+
+    def _addCard(self, item: Worker):
+        """
+        在界面上添加一个表示Worker的卡片
+        :param: item: 一个Worker的进程
+        """
+        card = WorkerCard(item, self.card_layout.count() + 1)
+        self.card_layout.addWidget(card)
+        # card._workerStateChangedSignal.connect(self._stateChanged)
+
+    def _deleteCard(self, worker: Worker):
+        """
+        从界面上删除一个表示Worker的卡片
+        :param: worker: 一个Worker的信息
+        """
+        for i in range(self.card_layout.count()):
+            item = self.card_layout.itemAt(i)
+            if item and item.widget().getWorker() == worker:
+                self.card_layout.takeAt(i)
+                item.widget().deleteLater()
+                break
+        self._updateIndex()
+
+    def _upButtonClicked(self):
+        """点击 spinBox 的向上按钮"""
+        if not self._workspace:
+            show_error("Please 'Open' or 'New' a workspace first", self.window())
+        else:
+            if int(self.card_layout.count()) == self.max_card_num:
+                show_error("Unable to add more processes", self.window())
+            else:
+                self._workspace.start_workers(1)
+
+    def _downButtonClicked(self):
+        """点击 spinBox 的向下按钮"""
+        if len(self.other_workers) == 0:
+            show_error("No Idel Process can be deleted", self.window())
+        else:
+            self._workspace.remove_idel_workers(1)
+
     def _deleteIdelProcess(self):
         """清除所有空闲的进程"""
-        delItem = []
-        for item in self.other_workers:
-            delItem.append(item)
-        for item in delItem:
-            self._deleteProcessWorker(item)
-        self._updateToolsBar(
-            count=len(self.busy_workers),
-            idel_num=len(self.other_workers),
-            all_num=len(self.busy_workers),
-        )
-
-    def _spinBoxChanged(self):
-        """spinBox 手动输入完成以后"""
-        _all_num = len(self.busy_workers) + len(self.other_workers)
-        if int(self.spinBox.text()) > _all_num:
-            # 此时需要增加更多的 card
-            for _ in range(int(self.spinBox.text()) - _all_num):
-                self._upButtonClicked()
-            self._updateToolsBar(all_num=int(self.spinBox.text()))
-        elif int(self.spinBox.text()) < _all_num:
-            # 此时需要删除多余的 card
-            diff = _all_num - int(self.spinBox.text())
-            busy_num = len(self.busy_workers)
-            if int(self.spinBox.text()) < busy_num:
-                # 设置的数量 超过正在运行的进程数
-                show_error(
-                    f"Over {self.spinBox.text()} Processes are WORKING", self.window()
-                )
-            else:
-                delItem = []
-                # 先找到要删除的项
-                for item in self.other_workers:
-                    if diff == 0:
-                        break
-                    self._deleteProcessWorker(item)
-                    delItem.append(item)
-                    diff = diff - 1
-                # 逐个在 self.other_workers 中删除
-                for item in delItem:
-                    if item in self.other_workers:
-                        self.other_workers.remove(item)
-                self._updateToolsBar(idel_num=len(self.other_workers))
+        if self._workspace:
+            self._workspace.remove_idel_workers()
 
     def _updateToolsBar(self, count=None, all_num=None, busy_num=None, idel_num=None):
         """
@@ -324,85 +248,37 @@ class WorkerPanel(SmoothScrollArea):
         if not idel_num == None:
             self.idel_badge.setText(f"Idel:{idel_num}")
 
-    def _upButtonClicked(self):
-        """点击 spinBox 的向上按钮"""
-        if not self._workspace:
-            show_error("Please 'Open' or 'New' a workspace first", self.window())
-        else:
-            if int(self.card_layout.count()) == self.max_card_num:
-                show_error("Unable to add more processes", self.window())
-            else:
-                self._workspace.start_workers(1)
-                return
-                newWorker = ProcessWorker(manager=self._workspace.jm)
-                newWorker.start()
-                self._workspace.jm.workers.append(newWorker)
-                self._addCard(newWorker)
-                self.workerCountChanged.emit(
-                    len(self.busy_workers) + len(self.other_workers)
-                )
-                self._updateToolsBar(
-                    all_num=len(self.busy_workers) + len(self.other_workers)
-                )
-
-    def _downButtonClicked(self):
-        """点击 spinBox 的向下按钮"""
-        if len(self.other_workers) == 0:
-            show_error("No Idel Process can be deleted", self.window())
-            self._updateToolsBar(count=len(self.busy_workers))
-        else:
-            return
-            delworker = self.other_workers[len(self.other_workers) - 1]
-            self._deleteProcessWorker(delworker)
-            if delworker in self.other_workers:
-                self.other_workers.remove(delworker)
-            self._updateToolsBar(
-                all_num=len(self.busy_workers) + len(self.other_workers),
-                idel_num=len(self.other_workers),
-            )
-
-    def _addCard(self, item: Worker):
-        """
-        在界面上添加一个表示Worker的卡片
-        :param: item: 一个Worker的进程
-        """
-        card = WorkerCard(item, self.card_layout.count() + 1)
-        self.card_layout.addWidget(card)
-        card._workerStateChangedSignal.connect(self._stateChanged)
-
-    def _deleteProcessWorker(self, worker: ProcessWorker):
-        """
-        删除一个表示Worker的卡片
-        :param: worker: 一个Worker的信息
-        """
-        # worker.terminate()
-        return
-        tempItem = worker
-        self._workspace.jm.workers.remove(worker)
-        self.workerCountChanged.emit(len(self.busy_workers) + len(self.other_workers))
+    def _updateIndex(self):
+        # 更新卡片的 索引
         for i in range(self.card_layout.count()):
             item = self.card_layout.itemAt(i)
-            if item and item.widget().getWorker() == worker:
-                self.card_layout.takeAt(i)
-                item.widget().deleteLater()
-                break
-        self._updateIndex()
+            item.widget().setTitle(i + 1)
 
-        def terminateProcess():
-            # 单独开一个线程用来关闭不要的进程
-            tempItem.terminate()
-
-        self.deleteThread = Thread(
-            target=terminateProcess,
-            daemon=True,
-        )
-        self.deleteThread.start()
+    def _spinBoxChanged(self):
+        """spinBox 手动输入完成以后"""
+        _all_num = len(self.busy_workers) + len(self.other_workers)
+        if int(self.spinBox.text()) > _all_num:
+            # 此时需要增加更多的 card
+            self._workspace.start_workers(int(self.spinBox.text()) - _all_num)
+        elif int(self.spinBox.text()) < _all_num:
+            # 此时需要删除多余的 card
+            diff = _all_num - int(self.spinBox.text())
+            busy_num = len(self.busy_workers)
+            if int(self.spinBox.text()) < busy_num:
+                # 设置的数量 超过正在运行的进程数
+                show_error(
+                    f"Over {self.spinBox.text()} Processes are WORKING", self.window()
+                )
+            else:
+                self._workspace.remove_idel_workers(diff)
 
     def _stateChanged(self, worker: Worker):
         """
         每一个 worker 发生变化的时候，更新工具栏相应的数据
         :param: worker: 一个Worker的信息
+        TODO:
         """
+        return
         if not worker.is_idel():
             # 忙碌
             if not worker in self.busy_workers:
@@ -418,12 +294,6 @@ class WorkerPanel(SmoothScrollArea):
         self._updateToolsBar(
             busy_num=len(self.busy_workers), idel_num=len(self.other_workers)
         )
-
-    def _updateIndex(self):
-        # 更新卡片的 索引
-        for i in range(self.card_layout.count()):
-            item = self.card_layout.itemAt(i)
-            item.widget().setTitle(i + 1)
 
 
 class WorkerManagerPage(BasePage):

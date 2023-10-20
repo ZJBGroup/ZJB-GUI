@@ -175,7 +175,7 @@ class MainWindow(FluentWindow):
         """初始化窗口"""
 
         self.setTitleBar(CustomTitleBar(self))
-        self.resize(1100, 750)
+        self.resize(1150, 750)
         self.setWindowIcon(QIcon(find_resource_file("icon/logo.jpg")))
         self.setWindowTitle("Zhejiang Lab Brain")
 

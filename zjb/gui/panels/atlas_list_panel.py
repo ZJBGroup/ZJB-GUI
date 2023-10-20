@@ -1,25 +1,16 @@
-# coding:utf-8
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidgetItem, QVBoxLayout
 from qfluentwidgets import (
-    ComboBox,
     FluentIcon,
-    InfoBarIcon,
     ListWidget,
-    MessageBox,
-    MessageDialog,
-    PushButton,
     ScrollArea,
-    SubtitleLabel,
-    TeachingTip,
-    TeachingTipTailPosition,
-    TeachingTipView,
 )
 
-from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
-from zjb.gui.common.utils import show_error
-from zjb.gui.pages.atlas_surface_page import Atlas_Surface_Page
 from zjb.main.manager.workspace import Workspace
+
+from .._global import GLOBAL_SIGNAL, get_workspace
+from ..common.utils import show_error
+from ..pages.atlas_surface_page import Atlas_Surface_Page
+from ..pages.base_page import BasePage
 
 
 class AtlasInterface(ScrollArea):
@@ -48,27 +39,43 @@ class AtlasInterface(ScrollArea):
 
                 self.listWidget.addItem(atlasItem)
 
-    def _itemClicked(self, item):
+    def setWorkspace(self, workspace: Workspace):
+        """设置工作空间"""
+        self._workspace = workspace
+
+    def _itemClicked(self, item: QListWidgetItem):
         self.select_atlas_name = item.text()
         for atlas in self._workspace.atlases:
             if atlas.name == self.select_atlas_name:
-                select_atlas = atlas
+                self.select_atlas = atlas
                 break
 
         for subject in self._workspace.subjects:
             if subject.name == "fsaverage":
-                select_subject = subject
+                self.select_subject = subject
                 break
 
-        GLOBAL_SIGNAL.requestAddPage.emit(
-            Atlas_Surface_Page(
-                select_atlas.name,
-                select_atlas.name + " Surface Visualization",
-                FluentIcon.DOCUMENT,
-                select_atlas,
-                select_subject,
-            )
+        GLOBAL_SIGNAL.requestAddPage.emit(item.text(), self._addpage)
+
+    def _addpage(self, routeKey: str) -> BasePage:
+        _page = Atlas_Surface_Page(
+            routeKey,
+            self.select_atlas.name + " Surface Visualization",
+            FluentIcon.DOCUMENT,
+            self.select_atlas,
+            self.select_subject,
         )
+        return _page
+
+        # GLOBAL_SIGNAL.requestAddPage.emit(
+        #     Atlas_Surface_Page(
+        #         select_atlas.name,
+        #         select_atlas.name + " Surface Visualization",
+        #         FluentIcon.DOCUMENT,
+        #         select_atlas,
+        #         select_subject,
+        #     )
+        # )
 
     # def showTip(self, widget):
     #     position = TeachingTipTailPosition.BOTTOM

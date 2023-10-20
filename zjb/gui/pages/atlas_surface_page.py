@@ -4,8 +4,8 @@ from PyQt5.QtCore import pyqtSignal
 from pyqtgraph.opengl.shaders import FragmentShader, ShaderProgram, VertexShader
 from qfluentwidgets import Flyout, FlyoutAnimationType, InfoBarIcon
 
-from zjb.gui.pages.atlas_surface_page_ui import Ui_atlas_surface_page
-from zjb.gui.pages.base_page import BasePage
+from .atlas_surface_page_ui import Ui_atlas_surface_page
+from .base_page import BasePage
 
 
 class Atlas_Surface_Page(BasePage):
@@ -16,7 +16,7 @@ class Atlas_Surface_Page(BasePage):
 
         self.ui = Ui_atlas_surface_page()
         self.ui.setupUi(self)
-        self.setObjectName(routeKey.replace(" ", "_"))
+        self.setObjectName(routeKey)
         self.ui.base_color_slider.setValue(75)
         self.ui.base_color_slider.setEnabled(False)
         self.ui.brain_regions_panel.region_signal_list.connect(
@@ -203,7 +203,10 @@ class Atlas_Surface_Page(BasePage):
         self.ui.brain_regions_panel.ui.brain_regions_widget.set_regions(currentRegions)
         if region_data1 != 0:
             content = (
-                "No." + str(region_number + 1) + "  brain region is currently checked" + "\n"
+                "No."
+                + str(region_number + 1)
+                + "  brain region is currently checked"
+                + "\n"
                 "Region name："
                 + region_data1
                 + "\n"
@@ -242,4 +245,3 @@ class Atlas_Surface_Page(BasePage):
             self.ui.atlas_surface_view_widget.setRegionColor(
                 self.surface_region_mapping, self.regioncolor_list_contrast
             )
-

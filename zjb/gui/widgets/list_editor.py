@@ -64,7 +64,9 @@ class ListEditor(Editor, QWidget, Generic[T]):
             self.valueChanged.emit(self._value)
 
     def _remove_item(self, index: int):
-        self._clear_row_after(self.vBoxLayout.takeAt(index).layout())
+        self._clear_row_after(self.vBoxLayout, index)
+        for i, v in enumerate(self._value[index + 1 :]):
+            self._append_row(index + i, v)
         if not self._value:
             self._add_btn()
 

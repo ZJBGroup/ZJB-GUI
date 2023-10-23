@@ -28,7 +28,7 @@ class WorkerCard(CardWidget):
         self.setFixedWidth(CardSize.WIDTH)
         # 绑定对应Worker的数据
         self._worker = item
-        self._state = "waiting" if item.is_idel() else "working"
+        self._state = "waiting" if item.is_idle() else "working"
         self._content = f"State：\t\t{self._state}"
         # 标题
         self.titleLabel = BodyLabel(f"{index}-Worker", self)

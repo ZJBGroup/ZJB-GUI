@@ -1,69 +1,62 @@
-from PyQt5.QtCore import Qt, QEvent, pyqtSignal
-from PyQt5.QtGui import QFocusEvent
+from typing import Any, Callable
+
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
 from qfluentwidgets import LineEdit
 
 
-class Editor():
-
+class Editor:
     valueChanged = pyqtSignal(object)
 
-    def __init__(self, parent=None):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def setValue(self, value):
         raise NotImplementedError
 
 
-class LineEditor(Editor, LineEdit):
+class EditorType(Editor, QWidget):
+    """仅用于类型提示"""
 
-    def __init__(self, parent=None, _eval=None):
+
+class LineEditor(Editor, LineEdit):
+    def __init__(
+        self,
+        value: Any = "",
+        _to: Callable[[str], Any] = str,
+        _from: Callable[[Any], str] = str,
+        parent=None,
+    ):
         super().__init__(parent)
+        self._from = _from
+        self._to = _to
+        self.setValue(value)
 
         self.setClearButtonEnabled(True)
-        self.textEdited.connect(self._on_text_edited)
-        self.returnPressed.connect(self._commit)
-        self.installEventFilter(self)
-
-        self.setEval(_eval)
-        self._value = None
-        self._edited_flag = False
+        self.editingFinished.connect(self._commit)
 
     def setValue(self, value):
-        self._value = value
-        self.setText(str(value))
+        text = self._from(value)
+        self.setText(text)
+        self._old_text = text
 
-    def setEval(self, _eval):
-        self._eval = _eval
-
-    def _on_text_edited(self):
-        self._edited_flag = True
-
-    def eventFilter(self, obj: LineEdit, e: QEvent) -> bool:
-        if isinstance(e, QFocusEvent) and e.lostFocus():
-            if e.reason() in (Qt.FocusReason.MouseFocusReason, Qt.FocusReason.TabFocusReason):
-                if self._edited_flag:
-                    self._commit()
-        return super().eventFilter(obj, e)
-
-    def _update(self):
-        self.setText(str(self._value))
+    def _reset(self):
+        self.setText(self._old_text)
 
     def _commit(self):
-        value = self.text()
-        if not value:
-            self._update()
+        text = self.text()
+        if text == self._old_text:
             return
-        if self._eval:
-            try:
-                value = self._eval(value)
-            except Exception:
-                self._update()
-                return
-        self.valueChanged.emit(value)
-        self.clearFocus()
+        try:
+            value = self._to(text)
+        except Exception:
+            self._reset()
+            return
+        else:
+            self._old_text = text
+            self.valueChanged.emit(value)
 
 
 class FloatEditor(LineEditor):
-
-    def __init__(self, parent=None):
-        super().__init__(parent, float)
+    def __init__(self, value: float = 0, parent=None):
+        super().__init__(value, float, parent=parent)

@@ -2,24 +2,19 @@ import typing
 import uuid
 from functools import partial
 
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QCompleter, QFormLayout, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QFormLayout, QWidget
 from qfluentwidgets import (
-    Action,
     BodyLabel,
-    DisplayLabel,
     FluentIcon,
     LargeTitleLabel,
-    RoundMenu,
     SmoothScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
 )
 
-# from zjb.main.funcs import SimulationFunc
 from zjb.main.dtb.dynamics_model import (
     BifurcationFunc,
     BifurcationPlots,
@@ -31,30 +26,16 @@ from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL
 from ..widgets.bifurcation_widget_ui import Ui_bifurcation_widget
-from ..widgets.editor import LineEditor
+from ..widgets.editor import FloatEditor
 from ..widgets.phase_plane_widget_ui import Ui_phase_plane_widget
 from .base_page import BasePage
 from .dynamics_page_ui import Ui_dynamics_page
 
 DynamicsModelOrNone = typing.Optional[DynamicsModel]
 
-_valid_env = {
-    "pse_list": lambda *items: list(items),
-    "array": lambda *items: np.array(items),
-    "pse_linspace": lambda *args, **kwargs: np.linspace(*args, **kwargs).tolist(),
-    "pse_range": lambda *args, **kwargs: np.arange(*args, **kwargs).tolist(),
-}
-
-SIMULATION_FUNC_COMPLETER = QCompleter(name + "(" for name in _valid_env.keys())
-SIMULATION_FUNC_COMPLETER.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-
 expression2unicode_edit = partial(
     expression2unicode, rich=False
 )  # 面对非Label类型时使用rich=False的函数
-
-
-def _valid_parameter(value: str):
-    return eval(value, _valid_env)
 
 
 class DynamicsModelInfoPage(SmoothScrollArea):
@@ -143,9 +124,7 @@ class DynamicsModelInfoPage(SmoothScrollArea):
         )
 
         for name, value in parameters.items():
-            editor = LineEditor(self, _eval=_valid_parameter)
-            editor.setCompleter(SIMULATION_FUNC_COMPLETER)
-            editor.setValue(value)
+            editor = FloatEditor(value)
             editor.valueChanged.connect(partial(self._update_parameter, name))
             self.main_layout.addRow(BodyLabel(f"{expression2unicode(name)}:"), editor)
 

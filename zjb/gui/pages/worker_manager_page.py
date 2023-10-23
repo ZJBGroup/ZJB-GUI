@@ -35,7 +35,7 @@ class WorkerPanel(SmoothScrollArea):
         self.toolsBar.spinBox.editingFinished.connect(self._spinBoxChanged)
         self.toolsBar.spinBox.upButton.clicked.connect(self._upButtonClicked)
         self.toolsBar.spinBox.downButton.clicked.connect(self._downButtonClicked)
-        self.toolsBar.primaryToolButton.clicked.connect(self._deleteIdelProcess)
+        self.toolsBar.primaryToolButton.clicked.connect(self._deleteIdleProcess)
 
         # workerCard 布局
         self.card_layout = FlowLayout(needAni=True)
@@ -62,18 +62,19 @@ class WorkerPanel(SmoothScrollArea):
                 sleep(1)
                 for i in range(self.card_layout.count()):
                     item = self.card_layout.itemAt(i)
-                    pInformation = item.widget().getPsutilProcess()
-                    _memory = round(pInformation.memory_percent(), 4)
-                    _cpu = round(pInformation.cpu_percent(), 4)
-                    item.widget().setCpuInfo(_memory, _cpu)
-                    if item.widget().getWorker().is_idel():
-                        if not item.widget().getWorker() in self.other_workers:
-                            self.other_workers.append(item.widget().getWorker())
-                            self.busy_workers.remove(item.widget().getWorker())
-                    else:
-                        if not item.widget().getWorker() in self.busy_workers:
-                            self.busy_workers.append(item.widget().getWorker())
-                            self.other_workers.remove(item.widget().getWorker())
+                    if not item.widget() == None:
+                        pInformation = item.widget().getPsutilProcess()
+                        _memory = round(pInformation.memory_percent(), 4)
+                        _cpu = round(pInformation.cpu_percent(), 4)
+                        item.widget().setCpuInfo(_memory, _cpu)
+                        if item.widget().getWorker().is_idle():
+                            if not item.widget().getWorker() in self.other_workers:
+                                self.other_workers.append(item.widget().getWorker())
+                                self.busy_workers.remove(item.widget().getWorker())
+                        else:
+                            if not item.widget().getWorker() in self.busy_workers:
+                                self.busy_workers.append(item.widget().getWorker())
+                                self.other_workers.remove(item.widget().getWorker())
 
         self.cpuThread = Thread(target=updateCPUInfo, daemon=True)
         self.cpuThread.start()
@@ -104,7 +105,7 @@ class WorkerPanel(SmoothScrollArea):
 
             self._updateToolsBar(
                 count=len(self._workspace.workers),
-                idel_num=len(self.other_workers),
+                idle_num=len(self.other_workers),
                 all_num=len(self._workspace.workers),
             )
 
@@ -132,7 +133,7 @@ class WorkerPanel(SmoothScrollArea):
                 self._deleteCard(item)
                 self.other_workers.remove(item)
         self._updateToolsBar(
-            count=len(_object), idel_num=len(self.other_workers), all_num=len(_object)
+            count=len(_object), idle_num=len(self.other_workers), all_num=len(_object)
         )
         self.card_layout.setGeometry(self.card_layout.geometry())
 
@@ -161,7 +162,7 @@ class WorkerPanel(SmoothScrollArea):
         """
         for i in range(self.card_layout.count()):
             item = self.card_layout.itemAt(i)
-            if item and item.widget().getWorker() == worker:
+            if item.widget() and item.widget().getWorker() == worker:
                 self.card_layout.takeAt(i)
                 item.widget().deleteLater()
                 break
@@ -180,24 +181,24 @@ class WorkerPanel(SmoothScrollArea):
     def _downButtonClicked(self):
         """点击 spinBox 的向下按钮"""
         if len(self.other_workers) == 0:
-            show_error("No Idel Process can be deleted", self.window())
+            show_error("No Idle Process can be deleted", self.window())
         else:
-            self._workspace.remove_idel_workers(1)
+            self._workspace.remove_idle_workers(1)
 
-    def _deleteIdelProcess(self):
+    def _deleteIdleProcess(self):
         """清除所有空闲的进程"""
         if self._workspace:
-            self._workspace.remove_idel_workers()
+            self._workspace.remove_idle_workers()
 
-    def _updateToolsBar(self, count=None, all_num=None, busy_num=None, idel_num=None):
+    def _updateToolsBar(self, count=None, all_num=None, busy_num=None, idle_num=None):
         """
         更新工具栏中的各项数据
         :param: count: spinBox中的可编辑的数据
         :param: all_num: badge中的总数
         :param: busy_num: badge中运行中的进程数
-        :param: idel_num: badge中的空闲进程数
+        :param: idle_num: badge中的空闲进程数
         """
-        self.toolsBar.updateToolsBar(count, all_num, busy_num, idel_num)
+        self.toolsBar.updateToolsBar(count, all_num, busy_num, idle_num)
 
     def _updateIndex(self):
         # 更新卡片的 索引
@@ -223,7 +224,7 @@ class WorkerPanel(SmoothScrollArea):
                     self.window(),
                 )
             else:
-                self._workspace.remove_idel_workers(diff)
+                self._workspace.remove_idle_workers(diff)
 
 
 class WorkerManagerPage(BasePage):

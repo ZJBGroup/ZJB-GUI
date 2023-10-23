@@ -139,13 +139,15 @@ class JobListPage(BasePage):
         :param: workspace: 工作空间数据
         """
         self._workspace = workspace
-        print("job setWorkspace")
 
-    #     self._sync_table()
-    #     self._sync_layout(self.all_job_table)
-    #     self._sync_layout(self.running_job_table)
-    #     self._sync_layout(self.finished_job_table)
-    #     self._sync_layout(self.failed_job_table)
+        # for item in self._workspace.manager.jobiter():
+        #     print("222222222222222222222222222222222222", item)
+        if not self._workspace == None:
+            self._sync_table()
+            self._sync_layout(self.all_job_table)
+            self._sync_layout(self.running_job_table)
+            self._sync_layout(self.finished_job_table)
+            self._sync_layout(self.failed_job_table)
 
     def _sync_layout(self, widget: typing.Optional[JobTable]):
         """
@@ -173,20 +175,23 @@ class JobListPage(BasePage):
         self._failed_job = []
 
         # 将所有的数据拆分到不用的表中
-        # for item in self._workspace.dm.find_by_type(Job):
-        #     _item = [
-        #         str(item),
-        #         str(item.state.name),
-        #         item.func_type.__name__,
-        #         str(item.error) if item.error != None else "-",
-        #     ]
-        #     self._all_job.append(_item)
-        #     if str(item.state.name) == "WAIT_WORKER":
-        #         self._running_job.append(_item)
-        #     if str(item.state.name) == "DONE":
-        #         self._finished_job.append(_item)
-        #     if str(item.state.name) == "ERROR":
-        #         self._failed_job.append(_item)
+
+        for item in self._workspace.manager.jobiter():
+            print("2222222222222288888888822222222222222", item.state)
+            # for item in self._workspace.dm.find_by_type(Job):
+            _item = [
+                str(item),
+                str(item.state.name),
+                item.func.__name__,
+                str(item.err) if item.err != None else "-",
+            ]
+            self._all_job.append(_item)
+            if str(item.state.name) == "RUNNING":
+                self._running_job.append(_item)
+            if str(item.state.name) == "DONE":
+                self._finished_job.append(_item)
+            if str(item.state.name) == "ERROR":
+                self._failed_job.append(_item)
 
         # 设置每个 table 的行数
         self.all_job_table.setRowCount(len(self._all_job))

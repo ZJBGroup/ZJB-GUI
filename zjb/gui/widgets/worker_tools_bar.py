@@ -34,8 +34,8 @@ class WorkerToolsBar(QWidget):
         self.busy_badge = InfoBadge.error("Busy:0")
         self.busy_badge.setFont(QFont("", 14, QFont.Weight.Normal))
         # 空闲的 badge
-        self.idel_badge = InfoBadge.success("Idel:0")
-        self.idel_badge.setFont(QFont("", 14, QFont.Weight.Normal))
+        self.idle_badge = InfoBadge.success("Idle:0")
+        self.idle_badge.setFont(QFont("", 14, QFont.Weight.Normal))
 
         # 工具栏布局
         self.toolsBar.addWidget(self.spinBox)
@@ -44,7 +44,7 @@ class WorkerToolsBar(QWidget):
         self.toolsBar.addWidget(self.max_badge)
         self.toolsBar.addWidget(self.all_badge)
         self.toolsBar.addWidget(self.busy_badge)
-        self.toolsBar.addWidget(self.idel_badge)
+        self.toolsBar.addWidget(self.idle_badge)
 
     def setSpinBoxDisabled(self, flag: bool):
         self.spinBox.setDisabled(flag)
@@ -52,7 +52,7 @@ class WorkerToolsBar(QWidget):
     def getSpinBoxNum(self):
         return int(self.spinBox.text())
 
-    def updateToolsBar(self, count=None, all_num=None, busy_num=None, idel_num=None):
+    def updateToolsBar(self, count=None, all_num=None, busy_num=None, idle_num=None):
         """
         更新工具栏中的各项数据
         :param: count: spinBox中的可编辑的数据
@@ -66,5 +66,5 @@ class WorkerToolsBar(QWidget):
             self.all_badge.setText(f"All:{all_num}")
         if not busy_num == None:
             self.busy_badge.setText(f"Busy:{busy_num}")
-        if not idel_num == None:
-            self.idel_badge.setText(f"Idel:{idel_num}")
+        if not idle_num == None:
+            self.idle_badge.setText(f"Idle:{idle_num}")

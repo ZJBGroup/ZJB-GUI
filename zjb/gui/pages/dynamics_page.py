@@ -427,7 +427,7 @@ class BifurcationWorker(QThread):
 
         bifurcation_func.resolutions = dict_resolutions
 
-        bifurcationPlots = bifurcation_func(show=True)
+        bifurcationPlots = bifurcation_func(show=False)
 
         self._resultReady.emit(bifurcationPlots)  # 传出bifurcationPlots
 

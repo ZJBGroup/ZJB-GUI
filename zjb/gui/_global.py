@@ -24,6 +24,7 @@ Workspace相关
 """
 
 _workspace = None
+_workspace_path = None
 
 
 def get_workspace() -> "Workspace | None":
@@ -38,6 +39,18 @@ def get_workspace() -> "Workspace | None":
     return _workspace
 
 
+def get_workspace_path() -> "str | None":
+    """获取工作空间路径
+
+    Returns
+    -------
+    str | None
+        路径名
+    """
+    global _workspace_path
+    return _workspace_path
+
+
 def open_workspace(path: str, worker_count=0):
     """打开一个工作空间作为全局工作空间
 
@@ -50,6 +63,7 @@ def open_workspace(path: str, worker_count=0):
         表示需要启动的worker数量，如果为0则表示新建一个worker
     """
     global _workspace
+    global _workspace_path
 
     _worker_count = worker_count
     if _worker_count == 0:
@@ -63,6 +77,7 @@ def open_workspace(path: str, worker_count=0):
     _workspace = Workspace.from_manager(jm)
     _workspace.name = path.split("/")[len(path.split("/")) - 1]
     _workspace.start_workers(_worker_count)
+    _workspace_path = path
     GLOBAL_SIGNAL.workspaceChanged[Workspace].emit(_workspace)
 
 

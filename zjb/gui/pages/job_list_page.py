@@ -92,11 +92,16 @@ class JobListPage(BasePage):
         self.failed_job_table.itemClicked.connect(self.showDialog)
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
-        self.currentPageSignal.connect(self.setWorkspace)
         GLOBAL_SIGNAL.joblistChanged.connect(lambda: self.setUpdateFlag(True))
+        self.currentPageSignal.connect(self.updateTable)
 
     def setUpdateFlag(self, flag: bool):
         self.updataFlag = flag
+
+    def updateTable(self):
+        """根据 updataFlag 判断是否更新 Table"""
+        if self.updataFlag:
+            self.setWorkspace()
 
     def addSubInterface(self, widget: typing.Optional[JobTable], objectName, text):
         """
@@ -144,10 +149,9 @@ class JobListPage(BasePage):
         设置并同步工作空间数据
         :param: workspace: 工作空间数据
         """
-        if self.updataFlag:
-            self._workspace = get_workspace()
-            if not self._workspace == None:
-                self._sync_table()
+        self._workspace = get_workspace()
+        if not self._workspace == None:
+            self._sync_table()
 
     def _sync_layout(self, widget: typing.Optional[JobTable]):
         """

@@ -9,7 +9,7 @@ from qfluentwidgets import FlowLayout, SmoothScrollArea
 from zjb.doj.worker import Worker
 from zjb.main.manager.workspace import Workspace
 
-from .._global import GLOBAL_SIGNAL, get_workspace
+from .._global import GLOBAL_SIGNAL, get_workspace, get_workspace_path
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
 from ..widgets.worker_card import WorkerCard
@@ -136,15 +136,17 @@ class WorkerPanel(SmoothScrollArea):
             count=len(_object), idle_num=len(self.other_workers), all_num=len(_object)
         )
         self.card_layout.setGeometry(self.card_layout.geometry())
+        self._configWorkerCount(_index + 1)
 
     def _configWorkerCount(self, worker_count):
         """
         新增、删除 Worker 的时候 更新本地配置文件
         :param: worker_count: worker数目
         """
-        return
-        path = self._workspace.dm.path.replace("\\", "/")
-        name = path.split("/")[len(path.split("/")) - 1].replace(".lmdb", "")
+        # return
+        path = get_workspace_path()
+        name = path.split("/")[len(path.split("/")) - 1]
+        print(name, path, worker_count)
         sync_recent_config(name, path, worker_count)
 
     def _addCard(self, item: Worker):

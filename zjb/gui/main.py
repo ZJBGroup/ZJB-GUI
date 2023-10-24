@@ -108,7 +108,9 @@ class WinInterface(ScrollArea):
     def _onTabChanged(self, index: int):
         """tab切换操作"""
         objectName = self.tabBar.currentTab().routeKey()
-        self.stackedWindows.setCurrentWidget(self.findChild(BasePage, name=objectName))
+        _page: BasePage = self.findChild(BasePage, name=objectName)
+        self.stackedWindows.setCurrentWidget(_page)
+        _page.currentPageSignal.emit()
 
     def _closePage(self, index):
         """
@@ -127,6 +129,7 @@ class WinInterface(ScrollArea):
         :param: page: Tab对应的页面
         """
         self.stackedWindows.setCurrentWidget(page)
+        page.currentPageSignal.emit()
         self.tabBar.setCurrentTab(page.getRouteKey())
 
     def addPage(self, routeKey: str, callback):
@@ -248,12 +251,6 @@ class MainWindow(FluentWindow):
         self._work_space = workspace
         print("self._work_space==============", self._work_space.name)
         self.dynamicModelInterface.setWorkspace(workspace)
-        self.jobManagerInterface.setWorkspace(workspace)
-        # print(self._work_space.workers)
-
-        # self.workspace_page.setWorkspace(workspace)
-        # self.job_page.setWorkspace(workspace)
-        # self.switchTo(self.workspace_page)
 
 
 if __name__ == "__main__":

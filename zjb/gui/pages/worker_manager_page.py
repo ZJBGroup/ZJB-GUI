@@ -9,7 +9,7 @@ from qfluentwidgets import FlowLayout, SmoothScrollArea
 from zjb.doj.worker import Worker
 from zjb.main.manager.workspace import Workspace
 
-from .._global import GLOBAL_SIGNAL
+from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
 from ..widgets.worker_card import WorkerCard
@@ -81,12 +81,12 @@ class WorkerPanel(SmoothScrollArea):
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
 
-    def setWorkspace(self, workspace: Workspace):
+    def setWorkspace(self):
         """
         设置工作空间，同步相应的数据
         :param: workspace: 一个工作空间
         """
-        self._workspace = workspace
+        self._workspace = get_workspace()
         if not self._workspace == None:
             # 监听 workers 数量的变化
             self._workspace.observe(

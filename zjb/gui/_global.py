@@ -13,6 +13,8 @@ class _GlobalSignal(QObject):
 
     requestAddPage = pyqtSignal(str, object)
 
+    joblistChanged = pyqtSignal()
+
 
 GLOBAL_SIGNAL = _GlobalSignal()
 

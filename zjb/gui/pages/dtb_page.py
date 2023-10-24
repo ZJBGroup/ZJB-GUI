@@ -7,7 +7,6 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentPushButton,
 )
-
 from zjb.doj.job import Job
 from zjb.main.api import DTB
 
@@ -65,6 +64,7 @@ class DTBPage(BasePage):
         job = Job(func=DTB.simulate, args=(self.dtb,))
         job.kwargs = {"store_key": job._gid.str}
         get_workspace().manager.bind(job)
+        GLOBAL_SIGNAL.joblistChanged.emit()
         show_success(f"Simulation {job._gid.str} started!", self.window())
 
     def _click_subject(self):

@@ -1,4 +1,5 @@
 import typing
+from pickle import TRUE
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
@@ -13,10 +14,8 @@ from PyQt5.QtWidgets import (
 from qfluentwidgets import Dialog, Pivot, TableWidget
 from zjb.main.manager.workspace import Workspace
 
+from .._global import GLOBAL_SIGNAL, get_workspace
 from .base_page import BasePage
-
-# from zjb.base.job import Job
-# from zjb.main.workspace import Workspace
 
 
 class InputDialog(Dialog):
@@ -52,7 +51,7 @@ class JobListPage(BasePage):
         super().__init__(routeKey, title, icon, parent)
         self.setObjectName(routeKey)
         self._workspace = None
-
+        self.updataFlag = True
         # 配置垂直布局
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setContentsMargins(5, 0, 5, 5)
@@ -91,6 +90,13 @@ class JobListPage(BasePage):
         self.finished_job_table.itemClicked.connect(self.showDialog)
         self.running_job_table.itemClicked.connect(self.showDialog)
         self.failed_job_table.itemClicked.connect(self.showDialog)
+
+        GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
+        self.currentPageSignal.connect(self.setWorkspace)
+        GLOBAL_SIGNAL.joblistChanged.connect(lambda: self.setUpdateFlag(True))
+
+    def setUpdateFlag(self, flag: bool):
+        self.updataFlag = flag
 
     def addSubInterface(self, widget: typing.Optional[JobTable], objectName, text):
         """
@@ -133,21 +139,15 @@ class JobListPage(BasePage):
         widget = self.stackedWidget.widget(index)
         self.pivot.setCurrentItem(widget.objectName())
 
-    def setWorkspace(self, workspace: Workspace):
+    def setWorkspace(self):
         """
         设置并同步工作空间数据
         :param: workspace: 工作空间数据
         """
-        self._workspace = workspace
-
-        # for item in self._workspace.manager.jobiter():
-        #     print("222222222222222222222222222222222222", item)
-        if not self._workspace == None:
-            self._sync_table()
-            self._sync_layout(self.all_job_table)
-            self._sync_layout(self.running_job_table)
-            self._sync_layout(self.finished_job_table)
-            self._sync_layout(self.failed_job_table)
+        if self.updataFlag:
+            self._workspace = get_workspace()
+            if not self._workspace == None:
+                self._sync_table()
 
     def _sync_layout(self, widget: typing.Optional[JobTable]):
         """
@@ -175,10 +175,7 @@ class JobListPage(BasePage):
         self._failed_job = []
 
         # 将所有的数据拆分到不用的表中
-
         for item in self._workspace.manager.jobiter():
-            print("2222222222222288888888822222222222222", item.state)
-            # for item in self._workspace.dm.find_by_type(Job):
             _item = [
                 str(item),
                 str(item.state.name),
@@ -241,3 +238,10 @@ class JobListPage(BasePage):
                 self.failed_job_table.item(i, j).setForeground(
                     QBrush(QColor(255, 0, 0))
                 )
+
+        self._sync_layout(self.all_job_table)
+        self._sync_layout(self.running_job_table)
+        self._sync_layout(self.finished_job_table)
+        self._sync_layout(self.failed_job_table)
+
+        self.setUpdateFlag(False)

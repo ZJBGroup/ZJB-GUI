@@ -16,7 +16,6 @@ class JobManagerInterface(ScrollArea):
         super().__init__(parent=parent)
 
         self.listWidget = ListWidget(self)
-        self._workspace = None
 
         jobItem = QListWidgetItem("Job List")
         jobItem.setIcon(FluentIcon.DOCUMENT.icon())
@@ -33,10 +32,6 @@ class JobManagerInterface(ScrollArea):
         self.setStyleSheet("#JobManagerInterface{background:transparent;border:none}")
 
         self.listWidget.itemClicked.connect(self._itemClicked)
-
-    def setWorkspace(self, workspace: Workspace):
-        """设置工作空间"""
-        self._workspace = workspace
 
     def _itemClicked(self, item: QListWidgetItem):
         """列表条目的点击"""
@@ -57,12 +52,12 @@ class JobManagerInterface(ScrollArea):
         """
         if routeKey == "Job List":
             _page = JobListPage(routeKey, "Job List", FluentIcon.DOCUMENT)
-            _page.setWorkspace(self._workspace)
+            _page.setWorkspace()
             return _page
 
         if routeKey == "Worker Manager":
             _page = WorkerManagerPage(
                 routeKey, "Worker Manager", FluentIcon.DEVELOPER_TOOLS
             )
-            _page.work_panel.setWorkspace(self._workspace)
+            _page.work_panel.setWorkspace()
             return _page

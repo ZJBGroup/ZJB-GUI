@@ -1,9 +1,12 @@
 # coding:utf-8
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QFrame
 
 
 class BasePage(QFrame):
     """默认页面"""
+
+    currentPageSignal = pyqtSignal()
 
     def __init__(self, routeKey: str, title: str, icon, parent=None):
         super().__init__(parent=parent)

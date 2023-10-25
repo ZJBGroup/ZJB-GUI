@@ -1,5 +1,7 @@
 import typing
 from pickle import TRUE
+from threading import Thread
+from time import sleep
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
@@ -91,6 +93,21 @@ class JobListPage(BasePage):
         self.running_job_table.itemClicked.connect(self.showDialog)
         self.failed_job_table.itemClicked.connect(self.showDialog)
 
+        # 数据分类与监测
+        self.running_job = []
+
+        # def watck_running_job():
+        #     while True:
+        #         sleep(2)
+        #         for item in self.running_job:
+        #             if not str(item.state.name) == "RUNNING":
+        #                 self.running_job.remove(item)
+        #                 self._sync_table()
+        #                 break
+
+        # self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
+        # self.watck_running_job_thread.start()
+
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.joblistChanged.connect(lambda: self.setUpdateFlag(True))
         self.currentPageSignal.connect(self.updateTable)
@@ -173,69 +190,81 @@ class JobListPage(BasePage):
         self.pivot.removeWidget("finished_job")
         self.pivot.removeWidget("running_job")
         self.pivot.removeWidget("failed_job")
-        self._all_job = []
-        self._finished_job = []
-        self._running_job = []
-        self._failed_job = []
+        self._all_job_data = []
+        self._finished_job_data = []
+        self._running_job_data = []
+        self._failed_job_data = []
 
         # 将所有的数据拆分到不用的表中
         for item in self._workspace.manager.jobiter():
             _item = [
-                str(item),
+                str(item._gid.str),
                 str(item.state.name),
                 item.func.__name__,
                 str(item.err) if item.err != None else "-",
             ]
-            self._all_job.append(_item)
+            self._all_job_data.append(_item)
             if str(item.state.name) == "RUNNING":
-                self._running_job.append(_item)
+                self._running_job_data.append(_item)
+                self.running_job.append(item)
             if str(item.state.name) == "DONE":
-                self._finished_job.append(_item)
+                self._finished_job_data.append(_item)
             if str(item.state.name) == "ERROR":
-                self._failed_job.append(_item)
+                self._failed_job_data.append(_item)
+
+        # 倒序展示
+        self._all_job_data.reverse()
+        self._running_job_data.reverse()
+        self._finished_job_data.reverse()
+        self._failed_job_data.reverse()
 
         # 设置每个 table 的行数
-        self.all_job_table.setRowCount(len(self._all_job))
-        self.running_job_table.setRowCount(len(self._running_job))
-        self.finished_job_table.setRowCount(len(self._finished_job))
-        self.failed_job_table.setRowCount(len(self._failed_job))
+        self.all_job_table.setRowCount(len(self._all_job_data))
+        self.running_job_table.setRowCount(len(self._running_job_data))
+        self.finished_job_table.setRowCount(len(self._finished_job_data))
+        self.failed_job_table.setRowCount(len(self._failed_job_data))
 
         # 将各个列表的总数加到导航上
         self.addSubInterface(
-            self.all_job_table, "all_job", f"all({len(self._all_job)})"
+            self.all_job_table, "all_job", f"all({len(self._all_job_data)})"
         )
         self.addSubInterface(
-            self.running_job_table, "running_job", f"running({len(self._running_job)})"
+            self.running_job_table,
+            "running_job",
+            f"running({len(self._running_job_data)})",
         )
         self.addSubInterface(
             self.finished_job_table,
             "finished_job",
-            f"finished({len(self._finished_job)})",
+            f"finished({len(self._finished_job_data)})",
         )
         self.addSubInterface(
-            self.failed_job_table, "failed_job", f"failed({len(self._failed_job)})"
+            self.failed_job_table, "failed_job", f"failed({len(self._failed_job_data)})"
         )
         self.pivot.setCurrentItem(self.all_job_table.objectName())
 
         # 往各个 table 中添加数据，并做样式设置
         # i 表示行 j 表示列
-        for i, jobInfo in enumerate(self._all_job):
+        for i, jobInfo in enumerate(self._all_job_data):
             for j in range(4):
                 self.all_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                if j == 0:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
+                else:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
                 if jobInfo[1] == "ERROR":
                     self.all_job_table.item(i, j).setForeground(
                         QBrush(QColor(255, 0, 0))
                     )
-        for i, jobInfo in enumerate(self._running_job):
+        for i, jobInfo in enumerate(self._running_job_data):
             for j in range(3):
                 self.running_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
                 self.running_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
-        for i, jobInfo in enumerate(self._finished_job):
+        for i, jobInfo in enumerate(self._finished_job_data):
             for j in range(3):
                 self.finished_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
                 self.finished_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
-        for i, jobInfo in enumerate(self._failed_job):
+        for i, jobInfo in enumerate(self._failed_job_data):
             for j in range(4):
                 self.failed_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
                 self.failed_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)

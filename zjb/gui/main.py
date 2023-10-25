@@ -148,6 +148,7 @@ class WinInterface(ScrollArea):
             page: BasePage = callback(routeKey)
             self.stackedWindows.addWidget(page)
             self.tabBar.addTab(page.getRouteKey(), page.getTitle(), page.getIcon())
+            self.tabBar.tab(page.getRouteKey()).setToolTip(page.getTitle())
             flag = page
         self._openPage(flag)
 

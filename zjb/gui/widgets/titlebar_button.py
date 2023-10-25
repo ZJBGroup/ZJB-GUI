@@ -83,6 +83,7 @@ class RecentWorkspaceItem(QListWidgetItem):
         self.name = obj["name"]
         self.path = obj["path"]
         self.setText(f"{self.name} > {self.path}")
+        self.setToolTip(f"{self.name} > {self.path}")
 
     def getWorkspacePath(self):
         """获取路径"""

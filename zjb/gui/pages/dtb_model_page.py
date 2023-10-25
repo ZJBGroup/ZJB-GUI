@@ -22,7 +22,7 @@ from ..widgets.instance_editor import (
     InstanceEditorFactory,
 )
 from ..widgets.list_editor import ListEditor
-from .atlas_surface_page import Atlas_Surface_Page
+from .atlas_surface_page import AtlasSurfacePage
 from .base_page import BasePage
 from .dynamics_page import DynamicsInformationPage
 
@@ -51,11 +51,8 @@ class DTBModelPage(BasePage):
         # FIXME: workspace.subjects[0] may not exist
         btn_atlas.clicked.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit(
-                atlas.name,
-                lambda _: Atlas_Surface_Page(
-                    atlas.name,
-                    atlas.name + " Surface Visualization",
-                    FluentIcon.DOCUMENT,
+                atlas._gid.str,
+                lambda _: AtlasSurfacePage(
                     atlas,
                     get_workspace().subjects[0],
                 ),

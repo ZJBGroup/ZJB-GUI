@@ -18,6 +18,7 @@ class RegionalTimeSeriesPage(BasePage):
         self.atlas = regional_timeseries.atlas
         self.subject = subject
         self.list_selected_regions = None
+
         self._setup_ui()
         self.setObjectName(regional_timeseries._gid.str)
 

@@ -2,43 +2,58 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtCore import pyqtSignal
 from pyqtgraph.opengl.shaders import FragmentShader, ShaderProgram, VertexShader
-from qfluentwidgets import Flyout, FlyoutAnimationType, InfoBarIcon
+from qfluentwidgets import FluentIcon, Flyout, FlyoutAnimationType, InfoBarIcon
 
+from zjb.main.api import Atlas, Subject
+
+from .._rc import find_resource_file
 from .atlas_surface_page_ui import Ui_atlas_surface_page
 from .base_page import BasePage
 
 
-class Atlas_Surface_Page(BasePage):
+class AtlasSurfacePage(BasePage):
     currentRegionClicked = pyqtSignal(int, list)
 
-    def __init__(self, routeKey: str, title: str, icon, atlas, subject, parent=None):
-        super().__init__(routeKey, title, icon, parent)
+    def __init__(self, atlas: Atlas, subject: Subject):
+        super().__init__(
+            atlas._gid.str, atlas.name + " Surface Visualization", FluentIcon.DOCUMENT
+        )
+        self.atlas = atlas
+        self.subject = subject
 
+        self._setup_ui()
+
+        self.setObjectName(atlas._gid.str)
+
+    def _setup_ui(self):
         self.ui = Ui_atlas_surface_page()
         self.ui.setupUi(self)
-        self.setObjectName(routeKey)
+
         self.ui.base_color_slider.setValue(75)
         self.ui.base_color_slider.setEnabled(False)
+
         self.ui.brain_regions_panel.region_signal_list.connect(
             self._on_region_signal_change
         )
 
-        self._show_atlas(atlas, subject)
+        self._show_atlas()
         self._init_configure()
 
         self.currentRegionClicked.connect(self._3dbrain_region_clicked)
-        self.ui.brain_regions_panel.show_tree_brain_regions(atlas)
 
-    def _show_atlas(self, atlas, subject):
-        self._atlas = atlas
-        self.surface = subject.data["surface_LR32k"]
-        self.surface_region_mapping = subject.data["BNA-surface_space_LR32k"]
+        self.ui.brain_regions_panel.show_tree_brain_regions(self.atlas)
+
+    def _show_atlas(self):
+        self.surface = self.subject.data["surface_LR32k"]
+        self.surface_region_mapping = self.subject.data["BNA-surface_space_LR32k"]
+
         self.ui.atlas_surface_view_widget.setAtlas(
-            self._atlas, self.surface, self.surface_region_mapping
+            self.atlas, self.surface, self.surface_region_mapping
         )
         self.ui.atlas_surface_view_widget.setRegions(
-            self._atlas, self.surface_region_mapping
+            self.atlas, self.surface_region_mapping
         )
+
         self._on_color_number_changed("20")
         self._on_choose_colorbar_cbb_changed("default")
 
@@ -91,7 +106,9 @@ class Atlas_Surface_Page(BasePage):
 
     def _on_choose_colorbar_cbb_changed(self, colorbar_name):
         if colorbar_name == "BNA-standard":
-            self.ui.brain_view_widget.setColorMap("...")
+            self.ui.atlas_surface_view_widget.setColorMap(
+                "./" + find_resource_file("colorbar/BNA-standard.csv")
+            )
             self.ui.color_number_edit.setText("256")
         if colorbar_name == "default":
             self.ui.atlas_surface_view_widget.setColorMap("tab20", source="matplotlib")
@@ -110,7 +127,7 @@ class Atlas_Surface_Page(BasePage):
             if color_number > 10000:
                 color_number = 9999
             self.regioncolor_list = list(np.linspace(0, 1, color_number)) * (
-                int(self._atlas.number_of_regions / color_number) + 1
+                int(self.atlas.number_of_regions / color_number) + 1
             )
             self.ui.atlas_surface_view_widget.setRegionColor(
                 self.surface_region_mapping, self.regioncolor_list
@@ -145,9 +162,9 @@ class Atlas_Surface_Page(BasePage):
                                 void main() {
                                     vec4 color = gl_Color;
                                     float s = pow(normal.x*normal.x + normal.y*normal.y, 2.0);
-                                    color.x = color.x * (1 - s);
-                                    color.y = color.y * (1 - s);
-                                    color.z = color.z * (1 - s);
+                                    color.x = color.x * (1. - s);
+                                    color.y = color.y * (1. - s);
+                                    color.z = color.z * (1. - s);
                                     gl_FragColor = color;
                                 }
                             """

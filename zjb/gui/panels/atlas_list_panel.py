@@ -1,15 +1,11 @@
 from PyQt5.QtWidgets import QListWidgetItem, QVBoxLayout
-from qfluentwidgets import (
-    FluentIcon,
-    ListWidget,
-    ScrollArea,
-)
+from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
 
 from zjb.main.manager.workspace import Workspace
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_error
-from ..pages.atlas_surface_page import Atlas_Surface_Page
+from ..pages.atlas_surface_page import AtlasSurfacePage
 from ..pages.base_page import BasePage
 
 
@@ -44,38 +40,42 @@ class AtlasInterface(ScrollArea):
         self._workspace = workspace
 
     def _itemClicked(self, item: QListWidgetItem):
-        self.select_atlas_name = item.text()
+        select_atlas_name = item.text()
         for atlas in self._workspace.atlases:
-            if atlas.name == self.select_atlas_name:
-                self.select_atlas = atlas
+            if atlas.name == select_atlas_name:
+                select_atlas = atlas
                 break
 
         for subject in self._workspace.subjects:
             if subject.name == "fsaverage":
-                self.select_subject = subject
+                select_subject = subject
                 break
 
-        GLOBAL_SIGNAL.requestAddPage.emit(item.text(), self._addpage)
-
-    def _addpage(self, routeKey: str) -> BasePage:
-        _page = Atlas_Surface_Page(
-            routeKey,
-            self.select_atlas.name + " Surface Visualization",
-            FluentIcon.DOCUMENT,
-            self.select_atlas,
-            self.select_subject,
+        GLOBAL_SIGNAL.requestAddPage.emit(
+            select_atlas._gid.str,
+            lambda _: AtlasSurfacePage(select_atlas, select_subject),
         )
-        return _page
 
-        # GLOBAL_SIGNAL.requestAddPage.emit(
-        #     Atlas_Surface_Page(
-        #         select_atlas.name,
-        #         select_atlas.name + " Surface Visualization",
-        #         FluentIcon.DOCUMENT,
-        #         select_atlas,
-        #         select_subject,
-        #     )
-        # )
+    #
+    # def _addpage(self, routeKey: str) -> BasePage:
+    #     _page = AtlasSurfacePage(
+    #         routeKey,
+    #         self.select_atlas.name + " Surface Visualization",
+    #         FluentIcon.DOCUMENT,
+    #         self.select_atlas,
+    #         self.select_subject,
+    #     )
+    #     return _page
+
+    # GLOBAL_SIGNAL.requestAddPage.emit(
+    #     Atlas_Surface_Page(
+    #         select_atlas.name,
+    #         select_atlas.name + " Surface Visualization",
+    #         FluentIcon.DOCUMENT,
+    #         select_atlas,
+    #         select_subject,
+    #     )
+    # )
 
     # def showTip(self, widget):
     #     position = TeachingTipTailPosition.BOTTOM

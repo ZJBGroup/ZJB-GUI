@@ -8,13 +8,14 @@ from qfluentwidgets import (
     TransparentPushButton,
 )
 from zjb.doj.job import Job
-from zjb.main.api import DTB
+from zjb.main.api import DTB, RegionalTimeSeries
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
 from .base_page import BasePage
 from .dtb_model_page import DTBModelPage
 from .subject_page import SubjectPage
+from .time_series_page import RegionalTimeSeriesPage
 
 
 class DTBPage(BasePage):
@@ -58,7 +59,9 @@ class DTBPage(BasePage):
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         for name, data in self.dtb.data.items():
-            self.scrollLayout.addRow(BodyLabel(name + ":"), BodyLabel(f"{data}"))
+            btn_result = TransparentPushButton(name)
+            self.scrollLayout.addRow(BodyLabel(name + ":"), btn_result)
+            btn_result.clicked.connect(lambda: self._click_result(data))
 
     def _simulate(self):
         job = Job(func=DTB.simulate, args=(self.dtb,))
@@ -76,3 +79,21 @@ class DTBPage(BasePage):
     def _click_model(self):
         model = self.dtb.model
         GLOBAL_SIGNAL.requestAddPage.emit(model._gid.str, lambda _: DTBModelPage(model))
+
+    def _click_result(self, data):
+        timeseries = RegionalTimeSeries()
+        timeseries.data = data
+        timeseries.data = timeseries.data.squeeze()
+        self._workspace = get_workspace()
+
+        timeseries.atlas = self.dtb.model.atlas
+
+        for subject in self._workspace.subjects:
+            if subject.name == "fsaverage":
+                self.select_subject = subject
+                break
+
+        GLOBAL_SIGNAL.requestAddPage.emit(
+            timeseries._gid.str,
+            lambda _: RegionalTimeSeriesPage(timeseries, self.select_subject),
+        )

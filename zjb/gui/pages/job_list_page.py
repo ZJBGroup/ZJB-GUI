@@ -96,17 +96,18 @@ class JobListPage(BasePage):
         # 数据分类与监测
         self.running_job = []
 
-        # def watck_running_job():
-        #     while True:
-        #         sleep(2)
-        #         for item in self.running_job:
-        #             if not str(item.state.name) == "RUNNING":
-        #                 self.running_job.remove(item)
-        #                 self._sync_table()
-        #                 break
+        # 当作业状态发生变化的时候，能够及时在GUI上更新
+        def watck_running_job():
+            while True:
+                sleep(2)
+                for item in self.running_job:
+                    if not str(item.state.name) == "RUNNING":
+                        self.running_job.remove(item)
+                        self._sync_table()
+                        break
 
-        # self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
-        # self.watck_running_job_thread.start()
+        self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
+        self.watck_running_job_thread.start()
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.joblistChanged.connect(lambda: self.setUpdateFlag(True))
@@ -259,15 +260,24 @@ class JobListPage(BasePage):
         for i, jobInfo in enumerate(self._running_job_data):
             for j in range(3):
                 self.running_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                self.running_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                if j == 0:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
+                else:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
         for i, jobInfo in enumerate(self._finished_job_data):
             for j in range(3):
                 self.finished_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                self.finished_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                if j == 0:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
+                else:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
         for i, jobInfo in enumerate(self._failed_job_data):
             for j in range(4):
                 self.failed_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                self.failed_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                if j == 0:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
+                else:
+                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
                 self.failed_job_table.item(i, j).setForeground(
                     QBrush(QColor(255, 0, 0))
                 )

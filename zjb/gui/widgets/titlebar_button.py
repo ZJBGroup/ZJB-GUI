@@ -3,7 +3,7 @@ import json
 import os
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QWidget
+from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QListWidgetItem, QWidget
 from qfluentwidgets import (
     Action,
     FluentIcon,
@@ -11,8 +11,9 @@ from qfluentwidgets import (
     RoundMenu,
     TransparentDropDownPushButton,
 )
+from zjb.main.manager.workspace import Workspace
 
-from .._global import open_workspace
+from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.utils import show_error
 from .input_name_dialog import show_dialog
@@ -25,18 +26,49 @@ class NewButton(TransparentDropDownPushButton):
         super().__init__()
         self.setText(name)
         self.newMenu = RoundMenu(parent=self)
-        self.newMenu.addAction(
-            Action(FluentIcon.FOLDER_ADD, "WorkSpace", triggered=self._new_workspace)
+
+        self.action_workspace = Action(
+            FluentIcon.FOLDER_ADD, "Workspace", triggered=self._new_workspace
         )
-        self.newMenu.addAction(Action(FluentIcon.TILES, "Project"))
-        self.newMenu.addAction(Action(FluentIcon.PEOPLE, "Subject"))
-        self.newMenu.addAction(Action(FluentIcon.LIBRARY, "DTB Model"))
-        self.newMenu.addAction(Action(FluentIcon.LEAF, "DTB"))
+        self.action_project = Action(
+            FluentIcon.TILES, "Project", triggered=self._new_project
+        )
+        self.action_project.setDisabled(True)
+        self.action_subject = Action(
+            FluentIcon.PEOPLE, "Subject", triggered=self._new_subject
+        )
+        self.action_subject.setDisabled(True)
+        self.action_dtb_model = Action(
+            FluentIcon.LIBRARY, "DTB Model", triggered=self._new_dtb_model
+        )
+        self.action_dtb_model.setDisabled(True)
+        self.action_dtb = Action(FluentIcon.LEAF, "DTB", triggered=self._new_dtb)
+        self.action_dtb.setDisabled(True)
+        self.newMenu.addAction(self.action_workspace)
+        self.newMenu.addAction(self.action_project)
+        self.newMenu.addAction(self.action_subject)
+        self.newMenu.addAction(self.action_dtb_model)
+        self.newMenu.addAction(self.action_dtb)
         self.setMenu(self.newMenu)
+
+        GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setActionState)
+
+    def setActionState(self, workspace: Workspace):
+        """修改按钮状态"""
+        if workspace == None:
+            self.action_project.setDisabled(True)
+            self.action_subject.setDisabled(True)
+            self.action_dtb_model.setDisabled(True)
+            self.action_dtb.setDisabled(True)
+        else:
+            self.action_project.setDisabled(False)
+            self.action_subject.setDisabled(False)
+            self.action_dtb_model.setDisabled(False)
+            self.action_dtb.setDisabled(False)
 
     def _new_workspace(self):
         """新建一个工作空间"""
-        workspace_name = show_dialog(self.window())
+        workspace_name = show_dialog(self.window(), "workspace")
         if workspace_name:
             w_path = QFileDialog.getExistingDirectory(self.window(), "New Workspace")
             if w_path:
@@ -45,14 +77,35 @@ class NewButton(TransparentDropDownPushButton):
                 sync_recent_config(workspace_name, workspace_path)
                 open_workspace(workspace_path)
 
+    def _new_project(self):
+        """新建 project"""
+        ...
+
+    def _new_subject(self):
+        """新建 subject"""
+        ...
+
+    def _new_dtb_model(self):
+        """新建 dtb_model"""
+        show_dialog(self.window(), "DTBModel")
+
+    def _new_dtb(self):
+        """新建 dtb"""
+        show_dialog(self.window(), "DTB")
+
 
 class OpenButton(TransparentDropDownPushButton):
     """Open 按钮及其下拉菜单"""
+
+    openWelcomePage = pyqtSignal()
 
     def __init__(self, name):
         super().__init__()
         self.setText(name)
         self.openMenu = RoundMenu(parent=self)
+        self.openMenu.addAction(
+            Action(FluentIcon.HOME, "Welcome", triggered=self._open_welcome)
+        )
         self.openMenu.addAction(
             Action(FluentIcon.FOLDER, "WorkSpace", triggered=self._open_workspace)
         )
@@ -60,7 +113,12 @@ class OpenButton(TransparentDropDownPushButton):
         self.recent_list = RecentWorkspaceList(self, "title")
         self.recent_list.recentWorkspaceClick.connect(lambda: self.openMenu.close())
         self.openMenu.addWidget(self.recent_list, selectable=False)
+
         self.setMenu(self.openMenu)
+
+    def _open_welcome(self):
+        """打开欢迎页信号"""
+        self.openWelcomePage.emit()
 
     def _open_workspace(self):
         """打开一个工作空间"""

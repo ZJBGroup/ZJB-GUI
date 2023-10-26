@@ -42,6 +42,9 @@ class CustomTitleBar(MSFluentTitleBar):
 
         self.newButton = NewButton("New")
         self.openButton = OpenButton("Open")
+        self.openButton.openWelcomePage.connect(
+            lambda: GLOBAL_SIGNAL.requestAddPage.emit("Welcome", self._addWelcomePage)
+        )
 
         self.toolButtonLayout = QHBoxLayout()
         self.toolButtonLayout.setContentsMargins(0, 0, 0, 0)
@@ -49,6 +52,11 @@ class CustomTitleBar(MSFluentTitleBar):
         self.toolButtonLayout.addWidget(self.newButton)
         self.toolButtonLayout.addWidget(self.openButton)
         self.hBoxLayout.insertLayout(4, self.toolButtonLayout)
+
+    def _addWelcomePage(self, routeKey: str):
+        """新建欢迎页面的回调函数"""
+        welcome_page = WelcomePage(routeKey, "Welcome", FluentIcon.HOME)
+        return welcome_page
 
 
 class WinInterface(ScrollArea):

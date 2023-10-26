@@ -4,8 +4,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QPushButton, QVBoxLayout
 from qfluentwidgets import BodyLabel, FluentIcon, TitleLabel, TransparentPushButton
 
-from zjb.main.api import Subject, Surface
+from zjb.main.api import Subject, Surface, Connectivity, RegionalTimeSeries, SpaceCorrelation
 
+from .connectivity_page import ConnectivityPage
+from .time_series_page import RegionalTimeSeriesPage
 from .._global import GLOBAL_SIGNAL
 from .base_page import BasePage
 from .surface_page import SurfacePage
@@ -43,4 +45,31 @@ class SubjectPage(BasePage):
                 btn.clicked.connect(partial(add_page, data))
                 self.formLayout.addRow(BodyLabel(name + ":"), btn)
                 continue
+
+            if isinstance(data, Connectivity):
+                btn = TransparentPushButton(f"{data}")
+
+                def add_page(data: Connectivity):
+                    GLOBAL_SIGNAL.requestAddPage.emit(
+                        data._gid.str,
+                        lambda _: ConnectivityPage(data),
+                    )
+
+                btn.clicked.connect(partial(add_page, data))
+                self.formLayout.addRow(BodyLabel(name + ":"), btn)
+                continue
+
+            if isinstance(data, RegionalTimeSeries):
+                btn = TransparentPushButton(f"{data}")
+
+                def add_page(data: RegionalTimeSeries):
+                    GLOBAL_SIGNAL.requestAddPage.emit(
+                        data._gid.str,
+                        lambda _: RegionalTimeSeriesPage(data, self.subject),
+                    )
+
+                btn.clicked.connect(partial(add_page, data))
+                self.formLayout.addRow(BodyLabel(name + ":"), btn)
+                continue
+
             self.formLayout.addRow(BodyLabel(name + ":"), BodyLabel(f"{data}"))

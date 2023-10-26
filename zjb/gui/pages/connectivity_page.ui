@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>connectivity_page</class>
+ <widget class="QWidget" name="connectivity_page">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1027</width>
+    <height>646</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="BrainRegionsPanel" name="brain_regions_panel" native="true"/>
+     <widget class="ConnectivityWidget" name="connectivity_widget" native="true"/>
+     <widget class="MplWidget" name="circos_widget" native="true"/>
+    </widget>
+   </item>
+  </layout>
+  <zorder>splitter</zorder>
+  <zorder>splitter</zorder>
+  <zorder>brain_regions_panel</zorder>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BrainRegionsPanel</class>
+   <extends>QWidget</extends>
+   <header>zjb.gui.panels.brain_regions_panel</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MplWidget</class>
+   <extends>QWidget</extends>
+   <header>zjb.gui.widgets.mpl_widget</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConnectivityWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">zjb.gui.widgets.connectivity_widget</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

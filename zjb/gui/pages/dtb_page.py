@@ -8,7 +8,7 @@ from qfluentwidgets import (
     TransparentPushButton,
 )
 from zjb.doj.job import Job
-from zjb.main.api import DTB, RegionalTimeSeries
+from zjb.main.api import DTB, RegionalTimeSeries, RegionSpace
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
@@ -82,11 +82,13 @@ class DTBPage(BasePage):
 
     def _click_result(self, data):
         timeseries = RegionalTimeSeries()
+        space = RegionSpace(atlas=self.dtb.model.atlas)
+
         timeseries.data = data
         timeseries.data = timeseries.data.squeeze()
-        self._workspace = get_workspace()
+        timeseries.space = space
 
-        timeseries.atlas = self.dtb.model.atlas
+        self._workspace = get_workspace()
 
         for subject in self._workspace.subjects:
             if subject.name == "fsaverage":

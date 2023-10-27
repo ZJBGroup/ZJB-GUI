@@ -4,7 +4,7 @@ from threading import Thread
 from time import sleep
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -53,7 +53,7 @@ class JobListPage(BasePage):
         super().__init__(routeKey, title, icon, parent)
         self.setObjectName(routeKey)
         self._workspace = None
-        self.updataFlag = True
+        self.updateFlag = True
         # 配置垂直布局
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setContentsMargins(5, 0, 5, 5)
@@ -96,29 +96,42 @@ class JobListPage(BasePage):
         # 数据分类与监测
         self.running_job = []
 
-        # 当作业状态发生变化的时候，能够及时在GUI上更新
-        def watck_running_job():
-            while True:
-                sleep(2)
-                for item in self.running_job:
-                    if not str(item.state.name) == "RUNNING":
-                        self.running_job.remove(item)
-                        self._sync_table()
-                        break
+        # def watck_running_job():
+        #     while True:
+        #         sleep(2)
+        #         for item in self.running_job:
+        #             if not str(item.state.name) == "RUNNING":
+        #                 self.running_job.remove(item)
+        #                 self._sync_table()
+        #                 break
 
-        self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
-        self.watck_running_job_thread.start()
+        # self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
+        # self.watck_running_job_thread.start()
+
+        # 当作业状态发生变化的时候，能够及时在GUI上更新
+        self.watch_running_job = QTimer(self)
+        self.watch_running_job.start(2000)
+        self.watch_running_job.timeout.connect(self.updateRunningJob)
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.joblistChanged.connect(lambda: self.setUpdateFlag(True))
         self.currentPageSignal.connect(self.updateTable)
 
+    def updateRunningJob(self):
+        """更新 running_job 的状态"""
+        print("1")
+        for item in self.running_job:
+            if not str(item.state.name) == "RUNNING":
+                self.running_job.remove(item)
+                self._sync_table()
+                break
+
     def setUpdateFlag(self, flag: bool):
-        self.updataFlag = flag
+        self.updateFlag = flag
 
     def updateTable(self):
-        """根据 updataFlag 判断是否更新 Table"""
-        if self.updataFlag:
+        """根据 updateFlag 判断是否更新 Table"""
+        if self.updateFlag:
             self.setWorkspace()
 
     def addSubInterface(self, widget: typing.Optional[JobTable], objectName, text):

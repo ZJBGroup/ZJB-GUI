@@ -1,3 +1,4 @@
+import copy
 import typing
 import uuid
 from functools import partial
@@ -125,6 +126,7 @@ class DynamicsModelInfoPage(SmoothScrollArea):
 
         for name, value in parameters.items():
             editor = FloatEditor(value)
+            editor.setEnabled(False)
             editor.valueChanged.connect(partial(self._update_parameter, name))
             self.main_layout.addRow(BodyLabel(f"{expression2unicode(name)}:"), editor)
 
@@ -261,9 +263,22 @@ class PhasePlanePage(SmoothScrollArea):
         for i in reversed(range(self.form_layout.rowCount())):
             self.form_layout.removeRow(i)
 
+        self.form_layout.addRow(LargeTitleLabel(self._model.name + " Model"))
+
+        parameters = self._model.parameters
+
         self.form_layout.addRow(
-            LargeTitleLabel(self._model.__class__.__name__ + " Model")
+            SubtitleLabel("Parameters: "),
         )
+
+        for name, value in parameters.items():
+            editor = FloatEditor(value)
+            editor.valueChanged.connect(partial(self._update_parameter, name))
+            self.form_layout.addRow(BodyLabel(f"{expression2unicode(name)}:"), editor)
+
+        if not self._model:
+            return
+
         self.ui.main_layout.insertLayout(0, self.form_layout)
 
         state_variables = self._model.state_variables
@@ -290,6 +305,13 @@ class PhasePlanePage(SmoothScrollArea):
         self.ui.target_variable_x_cbb.currentIndexChanged.connect(
             self._on_target_variable_x_cbb_change
         )
+
+    def _update_parameter(self, name: str, value):
+        if not self._model:
+            return
+        model = self._model
+        model.parameters[name] = value
+        self._model = model
 
     def _on_target_variable_x_cbb_change(self, index):
         self.ui.target_variable_y_cbb.clear()
@@ -431,15 +453,25 @@ class BifurcationPage(SmoothScrollArea):
         self._model = None
 
     def _update(self):
-        if not self._model:
-            return
-
         for i in reversed(range(self.form_layout.rowCount())):
             self.form_layout.removeRow(i)
 
+        self.form_layout.addRow(LargeTitleLabel(self._model.name + " Model"))
+
+        parameters = self._model.parameters
+
         self.form_layout.addRow(
-            LargeTitleLabel(self._model.__class__.__name__ + " Model")
+            SubtitleLabel("Parameters: "),
         )
+
+        for name, value in parameters.items():
+            editor = FloatEditor(value)
+            editor.valueChanged.connect(partial(self._update_parameter, name))
+            self.form_layout.addRow(BodyLabel(f"{expression2unicode(name)}:"), editor)
+
+        if not self._model:
+            return
+
         self.ui.main_layout.insertLayout(0, self.form_layout)
 
         state_variables = self._model.state_variables
@@ -462,6 +494,13 @@ class BifurcationPage(SmoothScrollArea):
         for parameters_name in parameters_unicode:
             self.ui.target_parameter_x_cbb.addItem(parameters_name)
             self.ui.target_parameter_y_cbb.addItem(parameters_name)
+
+    def _update_parameter(self, name: str, value):
+        if not self._model:
+            return
+        model = self._model
+        model.parameters[name] = value
+        self._model = model
 
     def _start_bifurcation_worker(self):
         self.ui.start_btn.setEnabled(False)  # 禁用按钮
@@ -502,14 +541,18 @@ class DynamicsInformationPage(BasePage):
     ):
         super().__init__(routeKey, title, icon, parent)
 
-        self.ui = Ui_dynamics_page()
-        self.ui.setupUi(self)
-        self.setObjectName(routeKey)
-
         self._model = dynamicsModel
         self.index = index
         self.pp_page_num = 1
         self.bif_page_num = 1
+
+        self._setup_ui()
+
+        self.setObjectName(routeKey)
+
+    def _setup_ui(self):
+        self.ui = Ui_dynamics_page()
+        self.ui.setupUi(self)
 
         self._init_dm_into_page()
         self._init_phase_plane_page()
@@ -597,10 +640,10 @@ class DynamicsInformationPage(BasePage):
 
     def _setModel(self, model: DynamicsModelOrNone):
         """设置要编辑的动力学模型"""
-        self.dynamic_model_info_page._model = model
+        self.dynamic_model_info_page._model = copy.deepcopy(model)
         self.dynamic_model_info_page._update()
-        self.phase_plane_page._model = model
+        self.phase_plane_page._model = copy.deepcopy(model)
         self.phase_plane_page._update()
-        self.bifurcation_page._model = model
+        self.bifurcation_page._model = copy.deepcopy(model)
         self.bifurcation_page._update()
         self.ui.dm_info_button.click()

@@ -7,6 +7,7 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentPushButton,
 )
+
 from zjb.doj.job import Job
 from zjb.main.api import DTB, RegionalTimeSeries, RegionSpace
 
@@ -67,9 +68,11 @@ class DTBPage(BasePage):
             btn_result.clicked.connect(lambda: self._click_result(data))
 
     def _simulate(self):
-        job = Job(func=DTB.simulate, args=(self.dtb,))
+        job = Job(DTB.simulate, self.dtb)
         job.kwargs = {"store_key": job._gid.str}
-        get_workspace().manager.bind(job)
+        ws = get_workspace()
+        assert ws
+        ws.manager.bind(job)
         GLOBAL_SIGNAL.joblistChanged.emit()
         show_success(f"Simulation {job._gid.str} started!", self.window())
 

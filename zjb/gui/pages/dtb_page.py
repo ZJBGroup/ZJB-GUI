@@ -9,15 +9,15 @@ from qfluentwidgets import (
 )
 
 from zjb.doj.job import Job
-from zjb.main.api import DTB, RegionalTimeSeries, RegionSpace
+from zjb.main.api import DTB, SimulationResult
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
 from .base_page import BasePage
+from .connectivity_page import ConnectivityPage
 from .dtb_model_page import DTBModelPage
 from .subject_page import SubjectPage
 from .time_series_page import RegionalTimeSeriesPage
-from .connectivity_page import ConnectivityPage
 
 
 class DTBPage(BasePage):
@@ -87,12 +87,11 @@ class DTBPage(BasePage):
         GLOBAL_SIGNAL.requestAddPage.emit(model._gid.str, lambda _: DTBModelPage(model))
 
     def _click_result(self, data):
-        timeseries = RegionalTimeSeries()
-        space = RegionSpace(atlas=self.dtb.model.atlas)
+        # TODO: 支持其他类型的数据
+        if not isinstance(data, SimulationResult):
+            return
 
-        timeseries.data = data
-        timeseries.data = timeseries.data.squeeze()
-        timeseries.space = space
+        timeseries = data.data[0]
 
         self._workspace = get_workspace()
 

@@ -16,6 +16,7 @@ from .base_page import BasePage
 from .dtb_model_page import DTBModelPage
 from .subject_page import SubjectPage
 from .time_series_page import RegionalTimeSeriesPage
+from .connectivity_page import ConnectivityPage
 
 
 class DTBPage(BasePage):
@@ -44,6 +45,8 @@ class DTBPage(BasePage):
         self.formLayout.addRow(BodyLabel("model:"), btn_model)
 
         btn_connectivity = TransparentPushButton(f"{self.dtb.connectivity}")
+        btn_connectivity.clicked.connect(self._click_connectivity)
+
         self.formLayout.addRow(BodyLabel("connectivity:"), btn_connectivity)
 
         btn_simulate = TransparentPushButton(f"Simulate")
@@ -98,4 +101,11 @@ class DTBPage(BasePage):
         GLOBAL_SIGNAL.requestAddPage.emit(
             timeseries._gid.str,
             lambda _: RegionalTimeSeriesPage(timeseries, self.select_subject),
+        )
+
+    def _click_connectivity(self):
+        connectivity = self.dtb.connectivity
+
+        GLOBAL_SIGNAL.requestAddPage.emit(
+            connectivity._gid.str, lambda _: ConnectivityPage(connectivity)
         )

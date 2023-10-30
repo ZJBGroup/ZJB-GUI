@@ -79,19 +79,23 @@ class NewButton(TransparentDropDownPushButton):
 
     def _new_project(self):
         """新建 project"""
-        ...
+        getdata = show_dialog(self.window(), "Project")
+        print("getdata:", getdata)
 
     def _new_subject(self):
         """新建 subject"""
-        ...
+        getdata = show_dialog(self.window(), "Subject")
+        print("getdata:", getdata)
 
     def _new_dtb_model(self):
         """新建 dtb_model"""
-        show_dialog(self.window(), "DTBModel")
+        getdata = show_dialog(self.window(), "DTBModel")
+        print("getdata:", getdata)
 
     def _new_dtb(self):
         """新建 dtb"""
-        show_dialog(self.window(), "DTB")
+        getdata = show_dialog(self.window(), "DTB")
+        print("getdata:", getdata)
 
 
 class OpenButton(TransparentDropDownPushButton):

@@ -1,6 +1,4 @@
 import os
-from threading import Thread
-from time import sleep
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QEasingCurve, Qt, QTimer, pyqtSignal
@@ -55,29 +53,6 @@ class WorkerPanel(SmoothScrollArea):
         self.main_layout.addWidget(self.toolsBar)
         self.main_layout.addWidget(self.card_layout_container)
         self.main_layout.setAlignment(Qt.AlignTop)
-
-        # 线程更新每个卡片中的CPU信息
-        # def updateCPUInfo():
-        #     while True:
-        #         sleep(1)
-        #         for i in range(self.card_layout.count()):
-        #             item = self.card_layout.itemAt(i)
-        #             if not item.widget() == None:
-        #                 pInformation = item.widget().getPsutilProcess()
-        #                 _memory = round(pInformation.memory_percent(), 4)
-        #                 _cpu = round(pInformation.cpu_percent(), 4)
-        #                 item.widget().setCpuInfo(_memory, _cpu)
-        #                 if item.widget().getWorker().is_idle():
-        #                     if not item.widget().getWorker() in self.other_workers:
-        #                         self.other_workers.append(item.widget().getWorker())
-        #                         self.busy_workers.remove(item.widget().getWorker())
-        #                 else:
-        #                     if not item.widget().getWorker() in self.busy_workers:
-        #                         self.busy_workers.append(item.widget().getWorker())
-        #                         self.other_workers.remove(item.widget().getWorker())
-
-        # self.cpuThread = Thread(target=updateCPUInfo, daemon=True)
-        # self.cpuThread.start()
 
         self.watch_cpu_info = QTimer(self)
         self.watch_cpu_info.start(1000)

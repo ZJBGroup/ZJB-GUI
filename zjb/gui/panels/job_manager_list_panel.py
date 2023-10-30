@@ -1,7 +1,6 @@
 # coding:utf-8
 from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem
 from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
-from zjb.main.manager.workspace import Workspace
 
 from .._global import GLOBAL_SIGNAL
 from ..pages.base_page import BasePage

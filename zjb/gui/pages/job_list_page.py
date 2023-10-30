@@ -1,9 +1,5 @@
 import typing
-from pickle import TRUE
-from threading import Thread
-from time import sleep
 
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtWidgets import (
@@ -95,19 +91,6 @@ class JobListPage(BasePage):
 
         # 数据分类与监测
         self.running_job = []
-
-        # def watck_running_job():
-        #     while True:
-        #         sleep(2)
-        #         for item in self.running_job:
-        #             if not str(item.state.name) == "RUNNING":
-        #                 self.running_job.remove(item)
-        #                 self._sync_table()
-        #                 break
-
-        # self.watck_running_job_thread = Thread(target=watck_running_job, daemon=True)
-        # self.watck_running_job_thread.start()
-
         # 当作业状态发生变化的时候，能够及时在GUI上更新
         self.watch_running_job = QTimer(self)
         self.watch_running_job.start(2000)
@@ -119,7 +102,6 @@ class JobListPage(BasePage):
 
     def updateRunningJob(self):
         """更新 running_job 的状态"""
-        print("1")
         for item in self.running_job:
             if not str(item.state.name) == "RUNNING":
                 self.running_job.remove(item)

@@ -11,11 +11,21 @@ from qfluentwidgets import (
     TransparentPushButton,
 )
 
-from zjb.main.api import DTBModel, EulerSolver, Monitor, Raw, Solver
+from zjb.main.api import (
+    BOLD,
+    DTBModel,
+    EulerSolver,
+    HenuSolver,
+    Monitor,
+    Raw,
+    Solver,
+    SubSample,
+    TemporalAverage,
+)
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
-from ..widgets.editor import FloatEditor, LineEditor
+from ..widgets.editor import FloatEditor, IntEditor, LineEditor
 from ..widgets.instance_editor import (
     InstanceEditor,
     InstanceEditorAttr,
@@ -137,7 +147,16 @@ class SolverEditor(InstanceEditor[Solver]):
                 InstanceEditorAttr("noises", partial(LineEditor, _to=eval)),
             ],
             "Euler",
-        )
+        ),
+        InstanceEditorFactory[Solver].from_type(
+            HenuSolver,
+            [
+                InstanceEditorAttr("dt", FloatEditor),
+                # TODO: 使用DictEditor替代LineEditor
+                InstanceEditorAttr("noises", partial(LineEditor, _to=eval)),
+            ],
+            "Henu",
+        ),
     ]
 
 
@@ -145,5 +164,33 @@ class MonitorEditor(InstanceEditor[Monitor]):
     factories = [
         InstanceEditorFactory[Monitor].from_type(
             Raw, [InstanceEditorAttr("expression", LineEditor)]
-        )
+        ),
+        InstanceEditorFactory[Monitor].from_type(
+            SubSample,
+            [
+                InstanceEditorAttr("expression", LineEditor),
+                InstanceEditorAttr("sample_interval", IntEditor),
+            ],
+        ),
+        InstanceEditorFactory[Monitor].from_type(
+            TemporalAverage,
+            [
+                InstanceEditorAttr("expression", LineEditor),
+                InstanceEditorAttr("sample_interval", IntEditor),
+            ],
+        ),
+        InstanceEditorFactory[Monitor].from_type(
+            BOLD,
+            [
+                InstanceEditorAttr("expression", LineEditor),
+                InstanceEditorAttr("sample_interval", IntEditor),
+                InstanceEditorAttr("taus", FloatEditor),
+                InstanceEditorAttr("tauf", FloatEditor),
+                InstanceEditorAttr("tauo", FloatEditor),
+                InstanceEditorAttr("alpha", FloatEditor),
+                InstanceEditorAttr("Eo", FloatEditor),
+                InstanceEditorAttr("TE", FloatEditor),
+                InstanceEditorAttr("vo", FloatEditor),
+            ],
+        ),
     ]

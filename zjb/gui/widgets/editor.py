@@ -60,3 +60,8 @@ class LineEditor(Editor, LineEdit):
 class FloatEditor(LineEditor):
     def __init__(self, value: float = 0, parent=None):
         super().__init__(value, float, parent=parent)
+
+
+class IntEditor(LineEditor):
+    def __init__(self, value: int = 0, parent=None):
+        super().__init__(value, int, parent=parent)

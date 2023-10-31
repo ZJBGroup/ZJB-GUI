@@ -13,6 +13,7 @@ from zjb.main.api import DTB, SimulationResult
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
+from ..panels.data_operation_panel import DataOperationPanel
 from .base_page import BasePage
 from .connectivity_page import ConnectivityPage
 from .dtb_model_page import DTBModelPage
@@ -63,9 +64,8 @@ class DTBPage(BasePage):
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         for name, data in self.dtb.data.items():
-            btn_result = TransparentPushButton(name)
-            self.scrollLayout.addRow(BodyLabel(name + ":"), btn_result)
-            btn_result.clicked.connect(lambda: self._click_result(data))
+            data_manipulation_panel = DataOperationPanel(name, data)
+            self.scrollLayout.addRow(data_manipulation_panel)
 
     def _simulate(self):
         job = Job(DTB.simulate, self.dtb)
@@ -85,25 +85,6 @@ class DTBPage(BasePage):
     def _click_model(self):
         model = self.dtb.model
         GLOBAL_SIGNAL.requestAddPage.emit(model._gid.str, lambda _: DTBModelPage(model))
-
-    def _click_result(self, data):
-        # TODO: 支持其他类型的数据
-        if not isinstance(data, SimulationResult):
-            return
-
-        timeseries = data.data[0]
-
-        self._workspace = get_workspace()
-
-        for subject in self._workspace.subjects:
-            if subject.name == "fsaverage":
-                self.select_subject = subject
-                break
-
-        GLOBAL_SIGNAL.requestAddPage.emit(
-            timeseries._gid.str,
-            lambda _: RegionalTimeSeriesPage(timeseries, self.select_subject),
-        )
 
     def _click_connectivity(self):
         connectivity = self.dtb.connectivity

@@ -40,7 +40,7 @@ class CustomTitleBar(MSFluentTitleBar):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.newButton = NewButton("New")
+        self.newButton = NewButton("New", window=self.window())
         self.openButton = OpenButton("Open")
         self.openButton.openWelcomePage.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit("Welcome", self._addWelcomePage)
@@ -230,7 +230,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(
             self.dtbWinInterface, FluentIcon.GLOBE, "Digital Twin Brain", pos
         )
-        self.addSubInterface(self.atlasInterface, FluentIcon.IOT, "Atlas", pos)
+        self.addSubInterface(self.atlasInterface, FluentIcon.ASTERISK, "Atlas", pos)
         self.addSubInterface(
             self.dynamicModelInterface, FluentIcon.CALORIES, "Dynamic Model", pos
         )

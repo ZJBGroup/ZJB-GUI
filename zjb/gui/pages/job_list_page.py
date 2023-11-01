@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 from qfluentwidgets import Dialog, Pivot, TableWidget
-from zjb.main.manager.workspace import Workspace
+from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from .base_page import BasePage
@@ -244,10 +244,7 @@ class JobListPage(BasePage):
         for i, jobInfo in enumerate(self._all_job_data):
             for j in range(4):
                 self.all_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                if j == 0:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
-                else:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
                 if jobInfo[1] == "ERROR":
                     self.all_job_table.item(i, j).setForeground(
                         QBrush(QColor(255, 0, 0))
@@ -255,24 +252,15 @@ class JobListPage(BasePage):
         for i, jobInfo in enumerate(self._running_job_data):
             for j in range(3):
                 self.running_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                if j == 0:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
-                else:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                self.running_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
         for i, jobInfo in enumerate(self._finished_job_data):
             for j in range(3):
                 self.finished_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                if j == 0:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
-                else:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                self.finished_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
         for i, jobInfo in enumerate(self._failed_job_data):
             for j in range(4):
                 self.failed_job_table.setItem(i, j, QTableWidgetItem(jobInfo[j]))
-                if j == 0:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignLeft)
-                else:
-                    self.all_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
+                self.failed_job_table.item(i, j).setTextAlignment(Qt.AlignCenter)
                 self.failed_job_table.item(i, j).setForeground(
                     QBrush(QColor(255, 0, 0))
                 )

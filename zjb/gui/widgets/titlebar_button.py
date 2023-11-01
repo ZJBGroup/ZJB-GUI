@@ -11,91 +11,29 @@ from qfluentwidgets import (
     RoundMenu,
     TransparentDropDownPushButton,
 )
-from zjb.main.manager.workspace import Workspace
+from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.utils import show_error
-from .input_name_dialog import show_dialog
+from .new_entity_menu import NewEntityMenu
 
 
 class NewButton(TransparentDropDownPushButton):
     """New 按钮及其下拉菜单"""
 
-    def __init__(self, name):
+    def __init__(self, name, window):
         super().__init__()
         self.setText(name)
-        self.newMenu = RoundMenu(parent=self)
-
-        self.action_workspace = Action(
-            FluentIcon.FOLDER_ADD, "Workspace", triggered=self._new_workspace
-        )
-        self.action_project = Action(
-            FluentIcon.TILES, "Project", triggered=self._new_project
-        )
-        self.action_project.setDisabled(True)
-        self.action_subject = Action(
-            FluentIcon.PEOPLE, "Subject", triggered=self._new_subject
-        )
-        self.action_subject.setDisabled(True)
-        self.action_dtb_model = Action(
-            FluentIcon.LIBRARY, "DTB Model", triggered=self._new_dtb_model
-        )
-        self.action_dtb_model.setDisabled(True)
-        self.action_dtb = Action(FluentIcon.LEAF, "DTB", triggered=self._new_dtb)
-        self.action_dtb.setDisabled(True)
-        self.newMenu.addAction(self.action_workspace)
-        self.newMenu.addAction(self.action_project)
-        self.newMenu.addAction(self.action_subject)
-        self.newMenu.addAction(self.action_dtb_model)
-        self.newMenu.addAction(self.action_dtb)
+        self._window = window
+        self.newMenu = NewEntityMenu(window=self._window)
         self.setMenu(self.newMenu)
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setActionState)
 
     def setActionState(self, workspace: Workspace):
         """修改按钮状态"""
-        if workspace == None:
-            self.action_project.setDisabled(True)
-            self.action_subject.setDisabled(True)
-            self.action_dtb_model.setDisabled(True)
-            self.action_dtb.setDisabled(True)
-        else:
-            self.action_project.setDisabled(False)
-            self.action_subject.setDisabled(False)
-            self.action_dtb_model.setDisabled(False)
-            self.action_dtb.setDisabled(False)
-
-    def _new_workspace(self):
-        """新建一个工作空间"""
-        workspace_name = show_dialog(self.window(), "workspace")
-        if workspace_name:
-            w_path = QFileDialog.getExistingDirectory(self.window(), "New Workspace")
-            if w_path:
-                workspace_path = f"{w_path}/{workspace_name}"
-                os.mkdir(workspace_path)
-                sync_recent_config(workspace_name, workspace_path)
-                open_workspace(workspace_path)
-
-    def _new_project(self):
-        """新建 project"""
-        getdata = show_dialog(self.window(), "Project")
-        print("getdata:", getdata)
-
-    def _new_subject(self):
-        """新建 subject"""
-        getdata = show_dialog(self.window(), "Subject")
-        print("getdata:", getdata)
-
-    def _new_dtb_model(self):
-        """新建 dtb_model"""
-        getdata = show_dialog(self.window(), "DTBModel")
-        print("getdata:", getdata)
-
-    def _new_dtb(self):
-        """新建 dtb"""
-        getdata = show_dialog(self.window(), "DTB")
-        print("getdata:", getdata)
+        self.newMenu.setActionState(workspace)
 
 
 class OpenButton(TransparentDropDownPushButton):

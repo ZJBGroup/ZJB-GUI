@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QMovie
 from qfluentwidgets import FluentIcon, ListWidget
-from zjb.main.manager.workspace import Workspace
+from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config import cfg
@@ -67,7 +67,7 @@ class StartPanel(QtWidgets.QWidget):
 
     def _new_workspace(self):
         """新建一个工作空间"""
-        workspace_name = show_dialog(self.window())
+        workspace_name = show_dialog(self.window(), "workspace")
         if workspace_name:
             w_path = QtWidgets.QFileDialog.getExistingDirectory(
                 self.window(), "New Workspace"

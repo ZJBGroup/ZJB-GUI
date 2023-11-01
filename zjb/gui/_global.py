@@ -2,7 +2,8 @@ import os
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from zjb.doj.lmdb_job_manager import LMDBJobManager
-from zjb.main.manager.workspace import Workspace
+from zjb.dos.data import Data
+from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
 from .pages.base_page import BasePage
 
@@ -14,6 +15,8 @@ class _GlobalSignal(QObject):
     requestAddPage = pyqtSignal(str, object)
 
     joblistChanged = pyqtSignal()
+
+    dtbListUpdate = pyqtSignal(Data)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

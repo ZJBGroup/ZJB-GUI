@@ -16,7 +16,7 @@ class _GlobalSignal(QObject):
 
     joblistChanged = pyqtSignal()
 
-    dtbListUpdate = pyqtSignal(Data)
+    dtbListUpdate = pyqtSignal(Data, Project)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

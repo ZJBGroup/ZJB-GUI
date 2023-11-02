@@ -3,7 +3,7 @@ import json
 import os
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QListWidgetItem, QWidget
+from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QWidget
 from qfluentwidgets import (
     Action,
     FluentIcon,
@@ -11,7 +11,7 @@ from qfluentwidgets import (
     RoundMenu,
     TransparentDropDownPushButton,
 )
-from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
+from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config_path import get_local_config_path, sync_recent_config

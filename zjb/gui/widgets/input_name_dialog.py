@@ -1,13 +1,12 @@
 import re
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
-from qfluentwidgets import CaptionLabel, ComboBox, Dialog, LineEdit, MessageBoxBase
+from qfluentwidgets import CaptionLabel, ComboBox, Dialog, LineEdit
 from zjb.dos.data import Data
-from zjb.main.api import DTB, DTBModel, Project, SpaceCorrelation, Subject, Workspace
+from zjb.main.api import Project, SpaceCorrelation, Subject, Workspace
 
 from .._global import get_workspace
-from ..common.utils import show_error
 
 
 class WorkspaceInputDialog(Dialog):
@@ -44,6 +43,8 @@ def tree_to_list(Tree):
 
 
 class SelectWidget(QWidget):
+    """通用下拉选框"""
+
     selectedDateChanged = pyqtSignal(Data)
 
     def __init__(self, title: str, dataList=None, parent=None):
@@ -64,7 +65,7 @@ class SelectWidget(QWidget):
         self._comboBox.currentIndexChanged.connect(self.dateChanged)
 
     def getCurrentValue(self):
-        """获取选项值"""
+        """获取当前选项值"""
         return self._comboBox.currentData()
 
     def setValue(self, value):
@@ -72,23 +73,24 @@ class SelectWidget(QWidget):
         self._comboBox.setCurrentIndex(self._comboBox.findData(value))
 
     def updateSelectList(self, datelist):
-        """更新选项列表"""
+        """更新所有选项"""
         self._comboBox.clear()
         for item in datelist:
             if isinstance(item, SpaceCorrelation):
                 self._comboBox.addItem(str(item), userData=item)
             else:
                 self._comboBox.addItem(item.name, userData=item)
+        if len(datelist) > 0:
+            self.selectedDateChanged.emit(self._comboBox.currentData())
 
     def dateChanged(self, _):
         """选择的值变化的时候,发出信号"""
-        # if isinstance(self._comboBox.currentData(), Project) or isinstance(
-        #     self._comboBox.currentData(), Subject
-        # ):
         self.selectedDateChanged.emit(self._comboBox.currentData())
 
 
 class InputWidget(QWidget):
+    """输入实体名称的输入框"""
+
     def __init__(self, title: str, parent=None):
         super().__init__(parent)
         self.inputlabel = QLabel(f"{title}:", self)
@@ -104,20 +106,20 @@ class InputWidget(QWidget):
         self.layout.setSpacing(5)
 
     def gettext(self):
+        """获取输入框中的值"""
         return self._inputBox.text()
 
 
 class EntityCreationDialog(Dialog):
-    """创建DTBModel 及DTB时，弹窗选择关联的实体"""
+    """创建 Project Subject DTBModel DTB 弹窗选择关联的实体"""
 
     def __init__(self, title: str, content="", parent=None, project: Project = None):
         super().__init__(title, content=content, parent=parent)
         self.setTitleBarVisible(False)
         self.contentLabel.hide()
-        all_project: Workspace = tree_to_list(get_workspace())
 
         # Project 下拉菜单
-        project_select_list = all_project
+        project_select_list = tree_to_list(get_workspace())
         self.project_selector = SelectWidget("Project", dataList=project_select_list)
         if not project == None:
             self.project_selector.setValue(project)
@@ -155,16 +157,16 @@ class EntityCreationDialog(Dialog):
         self.connectivity_selector = SelectWidget(
             "Connectivity", dataList=connectivity_select_list
         )
+        default_subject = self.subject_selector.getCurrentValue()
+        if not default_subject == None:
+            self.updateConnectivityList(default_subject)
 
-        # 输入框
+        # name 输入框
         self.lineEdit = InputWidget("Name")
 
-        # 选择不同的Project的时候，Subject列表和 DTB model列表会进行改变
         self.project_selector.selectedDateChanged.connect(
             self.updateSubjectAndDTBModelList
         )
-
-        # 选择不同的 Subject 的时候，connectivity列表会进行改变
         self.subject_selector.selectedDateChanged.connect(self.updateConnectivityList)
 
         self.vBoxLayout.insertWidget(2, self.project_selector, 1)
@@ -198,7 +200,6 @@ class EntityCreationDialog(Dialog):
             self.dynamicModel_selector.hide()
             self.connectivity_selector.show()
 
-    #
     def getData(self, type: str):
         """外部控件根据类型获取用户输入的信息"""
         if type == "Project":
@@ -220,18 +221,27 @@ class EntityCreationDialog(Dialog):
         self.subject_selector.updateSelectList(project.available_subjects())
 
     def updateConnectivityList(self, subject: Subject):
+        """选择不同的 Subject 的时候，connectivity列表会进行改变"""
         connectivityitems = []
-        print("subject,data", subject.data)
         for _, value in subject.data.items():
-            print(value, "0000000000000000000000")
             if isinstance(value, SpaceCorrelation):
                 connectivityitems.append(value)
         self.connectivity_selector.updateSelectList(connectivityitems)
 
 
-def show_dialog(tag: str, project=None):
-    """配置弹窗并显示，用户输入符合标准的名称后将其返回"""
-    if tag == "workspace":
+def show_dialog(type: str, project=None):
+    """配置弹窗并显示，用户输入符合标准的名称后将其返回
+
+    Parameters
+    ----------
+    type : str
+        根据种类控制弹窗中不同控件的显隐
+    project : Project | None
+        传入的项目，传入为None时，表示从标题栏点入，否则为列表点入
+
+    """
+    if type == "workspace":
+        # 新建 Workspace 弹窗
         title = "Please name your Workspace:"
         content = "\n| \n| \n| \n| \n|"
         w = WorkspaceInputDialog(title, content)
@@ -245,43 +255,41 @@ def show_dialog(tag: str, project=None):
         else:
             return False
 
-    if tag == "Project":
+    if type == "Project":
+        # 新建 Project 弹窗
         title = "Choose a parent Project \nAnd name your Project:"
         w = EntityCreationDialog(title, "Project", project=project)
         if w.exec():
             name = w.lineEdit.gettext()
             res = re.search("^\w{3,20}$", name)
-
             if not res:
                 return False
             else:
                 return {"Project": w.getData("Project"), "name": name}
-
         else:
             return False
 
-    if tag == "Subject":
+    if type == "Subject":
+        # 新建 Subject 弹窗
         title = "Choose a parent Project \nAnd name your Subject:"
         w = EntityCreationDialog(title, "Subject", project=project)
         if w.exec():
             name = w.lineEdit.gettext()
             res = re.search("^\w{3,20}$", name)
-
             if not res:
                 return False
             else:
                 return {"Project": w.getData("Project"), "name": name}
-
         else:
             return False
 
-    if tag == "DTBModel":
+    if type == "DTBModel":
+        # 新建 DTBModel 弹窗
         title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
         w = EntityCreationDialog(title, "DTBModel", project=project)
         if w.exec():
             name = w.lineEdit.gettext()
             res = re.search("^\w{3,20}$", name)
-
             if (
                 res == None
                 or w.getData("Atlas") == None
@@ -295,17 +303,16 @@ def show_dialog(tag: str, project=None):
                     "DynamicModel": w.getData("DynamicModel"),
                     "name": name,
                 }
-
         else:
             return False
 
-    if tag == "DTB":
+    if type == "DTB":
+        # 新建 DTB 弹窗
         title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
         w = EntityCreationDialog(title, "DTB", project=project)
         if w.exec():
             name = w.lineEdit.gettext()
             res = re.search("^\w{3,20}$", name)
-
             if (
                 res == None
                 or w.getData("Subject") == None
@@ -321,6 +328,5 @@ def show_dialog(tag: str, project=None):
                     "Connectivity": w.getData("Connectivity"),
                     "name": name,
                 }
-
         else:
             return False

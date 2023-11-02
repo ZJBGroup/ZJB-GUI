@@ -1,7 +1,6 @@
 # coding:utf-8
 import os
 
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QFileDialog
 from qfluentwidgets import Action, FluentIcon, RoundMenu
 from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
@@ -13,6 +12,8 @@ from .input_name_dialog import show_dialog
 
 
 class NewEntityMenu(RoundMenu):
+    """标题栏 New 按钮的下拉菜单 及列表的右键菜单"""
+
     def __init__(self, item: [Project, Subject, DTBModel, DTB] = None, window=None):
         super().__init__()
         self._item = item
@@ -39,14 +40,17 @@ class NewEntityMenu(RoundMenu):
         self.addAction(self.action_dtb)
 
         if isinstance(self._item, Project):
+            # 从列表右键点击一个 Project 打开菜单
             self.setActionState(get_workspace())
             self.removeAction(self.action_workspace)
             self.addAction(self.action_delete)
         elif self._item == None:
+            # 从标题栏点击 New 按钮，打开菜单
             self.setActionState(get_workspace())
             self.insertAction(self.action_project, self.action_workspace)
             self.removeAction(self.action_delete)
         else:
+            # 从列表右键点击一个 非Project的实体
             self.removeAction(self.action_workspace)
             self.removeAction(self.action_project)
             self.removeAction(self.action_subject)
@@ -55,12 +59,13 @@ class NewEntityMenu(RoundMenu):
             self.addAction(self.action_delete)
 
     def getTips(self, str):
+        """获取创建实体失败的通用提示"""
         return (
             f"!!Failed to create {str} due to incorrect or incomplete input information"
         )
 
     def setActionState(self, workspace: Workspace):
-        """修改按钮状态"""
+        """修改按钮状态 没有打开工作空间的时候，禁用除了 Workspace 之外的操作"""
         if workspace == None:
             self.action_project.setDisabled(True)
             self.action_subject.setDisabled(True)
@@ -73,7 +78,7 @@ class NewEntityMenu(RoundMenu):
             self.action_dtb.setDisabled(False)
 
     def _new_workspace(self):
-        """新建一个工作空间"""
+        """点击 Workspace 按钮，新建Workspace"""
         workspace_name = show_dialog("workspace")
         if workspace_name:
             w_path = QFileDialog.getExistingDirectory(self.window(), "New Workspace")
@@ -89,13 +94,13 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _new_project(self):
-        """新建 project"""
+        """点击 Project 按钮， 新建 Project"""
         getdata = show_dialog("Project", project=self._item)
         if getdata:
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_project = parent_project.add_project(name)
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_project)
+            GLOBAL_SIGNAL.dtbListUpdate.emit(new_project, parent_project)
         else:
             show_error(
                 self.getTips("Project"),
@@ -103,13 +108,13 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _new_subject(self):
-        """新建 subject"""
+        """点击 Subject 按钮，新建 Subject"""
         getdata = show_dialog("Subject", project=self._item)
         if getdata:
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_subject = parent_project.add_subject(name)
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_subject)
+            GLOBAL_SIGNAL.dtbListUpdate.emit(new_subject, parent_project)
         else:
             show_error(
                 self.getTips("Subject"),
@@ -117,7 +122,7 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _new_dtb_model(self):
-        """新建 dtb_model"""
+        """点击 DTBModel 按钮，新建 DTBModel"""
         getdata = show_dialog("DTBModel", project=self._item)
         if getdata:
             parent_project: Project = getdata["Project"]
@@ -127,7 +132,7 @@ class NewEntityMenu(RoundMenu):
             new_dtb_model = parent_project.add_model(
                 name, select_atlas, select_dynamics
             )
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb_model)
+            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb_model, parent_project)
         else:
             show_error(
                 self.getTips("DTBModel"),
@@ -135,7 +140,7 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _new_dtb(self):
-        """新建 dtb"""
+        """点击 DTB 按钮，新建 DTB"""
         getdata = show_dialog("DTB", project=self._item)
         if getdata:
             print("getdata:", getdata)
@@ -147,7 +152,7 @@ class NewEntityMenu(RoundMenu):
             new_dtb = parent_project.add_dtb(
                 name, select_subject, select_model, select_connectivity
             )
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb)
+            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb, parent_project)
         elif getdata == False:
             show_error(
                 self.getTips("DTB"),
@@ -155,5 +160,5 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _delete_entity(self):
-        """新建 实体"""
-        print("delete")
+        """TODO:删除实体"""
+        print("delete:", self._item)

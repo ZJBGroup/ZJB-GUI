@@ -3,6 +3,7 @@ import os
 
 from PyQt5.QtWidgets import QFileDialog
 from qfluentwidgets import Action, FluentIcon, RoundMenu
+from zjb.dos.data import Data
 from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
 from .._global import GLOBAL_SIGNAL, get_workspace, open_workspace
@@ -19,21 +20,21 @@ class NewEntityMenu(RoundMenu):
         self._item = item
         self._window = window
         self.action_workspace = Action(
-            FluentIcon.FOLDER_ADD, "Workspace", triggered=self._new_workspace
+            FluentIcon.FOLDER_ADD, "New Workspace", triggered=self._new_workspace
         )
         self.action_project = Action(
-            FluentIcon.FOLDER_ADD, "Project", triggered=self._new_project
+            FluentIcon.FOLDER_ADD, "New Project", triggered=self._new_project
         )
         self.action_subject = Action(
-            FluentIcon.PEOPLE, "Subject", triggered=self._new_subject
+            FluentIcon.PEOPLE, "New Subject", triggered=self._new_subject
         )
         self.action_dtb_model = Action(
-            FluentIcon.IOT, "DTB Model", triggered=self._new_dtb_model
+            FluentIcon.IOT, "New DTB Model", triggered=self._new_dtb_model
         )
+        self.action_dtb = Action(FluentIcon.ALBUM, "New DTB", triggered=self._new_dtb)
         self.action_delete = Action(
             FluentIcon.DELETE, "Delete", triggered=self._delete_entity
         )
-        self.action_dtb = Action(FluentIcon.ALBUM, "DTB", triggered=self._new_dtb)
         self.addAction(self.action_project)
         self.addAction(self.action_subject)
         self.addAction(self.action_dtb_model)
@@ -100,7 +101,7 @@ class NewEntityMenu(RoundMenu):
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_project = parent_project.add_project(name)
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_project, parent_project)
+            GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_project, parent_project)
         else:
             show_error(
                 self.getTips("Project"),
@@ -114,7 +115,7 @@ class NewEntityMenu(RoundMenu):
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_subject = parent_project.add_subject(name)
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_subject, parent_project)
+            GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_subject, parent_project)
         else:
             show_error(
                 self.getTips("Subject"),
@@ -132,7 +133,9 @@ class NewEntityMenu(RoundMenu):
             new_dtb_model = parent_project.add_model(
                 name, select_atlas, select_dynamics
             )
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb_model, parent_project)
+            GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(
+                new_dtb_model, parent_project
+            )
         else:
             show_error(
                 self.getTips("DTBModel"),
@@ -152,7 +155,7 @@ class NewEntityMenu(RoundMenu):
             new_dtb = parent_project.add_dtb(
                 name, select_subject, select_model, select_connectivity
             )
-            GLOBAL_SIGNAL.dtbListUpdate.emit(new_dtb, parent_project)
+            GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_dtb, parent_project)
         elif getdata == False:
             show_error(
                 self.getTips("DTB"),
@@ -160,5 +163,5 @@ class NewEntityMenu(RoundMenu):
             )
 
     def _delete_entity(self):
-        """TODO:删除实体"""
-        print("delete:", self._item)
+        """删除实体"""
+        GLOBAL_SIGNAL.dtbListUpdate[Data].emit(self._item)

@@ -1,7 +1,10 @@
 # coding:utf-8
+from multiprocessing import parent_process
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractScrollArea, QTreeWidgetItem
 from qfluentwidgets import FluentIcon, ScrollArea, SubtitleLabel, TreeWidget, VBoxLayout
+from zjb.dos.data import Data
 from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
 from .._global import GLOBAL_SIGNAL
@@ -24,10 +27,29 @@ class DTBInterface(ScrollArea):
 
         GLOBAL_SIGNAL.workspaceChanged.connect(self._on_no_workspace)
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self._on_workspace)
-        GLOBAL_SIGNAL.dtbListUpdate.connect(self._update_tree)
+        GLOBAL_SIGNAL.dtbListUpdate[Data, Project].connect(self._update_tree_new)
+        GLOBAL_SIGNAL.dtbListUpdate[Data].connect(self._update_tree_del)
         print(GLOBAL_SIGNAL)
 
-    def _update_tree(self, new_entity, parent_project: Project):
+    def _update_tree_del(self, del_entity):
+        """删除实体之后会更新列表"""
+        for _item in self.tree.findItems(del_entity.name, Qt.MatchRecursive, 0):
+            if _item.getData() == del_entity:
+                del_item = _item
+                break
+        parent_item = del_item.parent()
+        if isinstance(del_entity, Project):
+            parent_item.getData().remove_project(del_entity)
+        if isinstance(del_entity, Subject):
+            parent_item.getData().remove_subject(del_entity)
+        if isinstance(del_entity, DTBModel):
+            parent_item.getData().remove_model(del_entity)
+        if isinstance(del_entity, DTB):
+            print("parent_item.getData()", parent_item.getData().name)
+            parent_item.getData().remove_dtb(del_entity)
+        parent_item.removeChild(del_item)
+
+    def _update_tree_new(self, new_entity, parent_project: Project):
         """创建新的实体之后会更新列表"""
 
         # 找到列表中的父节点
@@ -35,22 +57,18 @@ class DTBInterface(ScrollArea):
             if _item.getData() == parent_project:
                 parent_project_item = _item
                 break
-
         if isinstance(new_entity, Project):
             new_item = ProjectItem(new_entity, parent_project_item)
             self.tree.scrollToItem(new_item)
             self.tree.setCurrentItem(new_item)
-
         if isinstance(new_entity, Subject):
             new_item = SubjectItem(new_entity, parent_project_item)
             self.tree.scrollToItem(new_item)
             self.tree.setCurrentItem(new_item)
-
         if isinstance(new_entity, DTBModel):
             new_item = DTBModelItem(new_entity, parent_project_item)
             self.tree.scrollToItem(new_item)
             self.tree.setCurrentItem(new_item)
-
         if isinstance(new_entity, DTB):
             new_item = DTBItem(new_entity, parent_project_item)
             self.tree.scrollToItem(new_item)

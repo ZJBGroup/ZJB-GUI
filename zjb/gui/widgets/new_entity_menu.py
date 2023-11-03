@@ -96,7 +96,6 @@ class NewEntityMenu(RoundMenu):
     def _new_project(self):
         """点击 Project 按钮， 新建 Project"""
         getdata = show_dialog("Project", project=self._item)
-        print("=============getdata", getdata)
         if getdata == "canel":
             return
         elif not getdata == False:

@@ -184,6 +184,7 @@ class EntityCreationDialog(Dialog):
         # name 输入框
         self.lineEdit = InputWidget("Name")
 
+        # 表单动态联动
         self.project_selector.selectedDateChanged.connect(
             self.updateSubjectAndDTBModelList
         )
@@ -224,10 +225,12 @@ class EntityCreationDialog(Dialog):
             self.connectivity_selector.show()
 
     def submit_date(self, str):
+        # 标记按钮的点击，关闭窗口
         self.flag = str
         self.close()
 
     def getflag(self):
+        # 获取按钮标记
         return self.flag
 
     def getData(self, type: str):

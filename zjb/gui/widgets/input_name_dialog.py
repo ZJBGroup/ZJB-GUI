@@ -1,8 +1,15 @@
 import re
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
-from qfluentwidgets import CaptionLabel, ComboBox, Dialog, LineEdit
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from qfluentwidgets import (
+    CaptionLabel,
+    ComboBox,
+    Dialog,
+    LineEdit,
+    PrimaryPushButton,
+    PushButton,
+)
 from zjb.dos.data import Data
 from zjb.main.api import Project, SpaceCorrelation, Subject, Workspace
 
@@ -15,8 +22,9 @@ class WorkspaceInputDialog(Dialog):
     def __init__(self, title: str, content: str, parent=None):
         super().__init__(title, content=content, parent=parent)
         self.setTitleBarVisible(False)
+        self.flag = ""
         self.lineEdit = LineEdit(self)
-        tips = "Please enter 3 to 20 characters consisting of '0-9','a-z','A-Z','_'"
+        tips = "Please enter 1 to 20 characters consisting of '0-9','a-z','A-Z','_'"
         self.tipsLabel = CaptionLabel(tips, self)
         self.tipsLabel.setTextColor("#606060", "#d2d2d2")
         self.tipsLabel.setObjectName("contentLabel")
@@ -26,6 +34,17 @@ class WorkspaceInputDialog(Dialog):
         self.lineEdit.setClearButtonEnabled(True)
         self.lineEdit.move(45, 70)
         self.tipsLabel.move(47, 110)
+
+        # 重写底部按钮
+        self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
+        self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
+
+    def submit_date(self, str):
+        self.flag = str
+        self.close()
+
+    def getflag(self):
+        return self.flag
 
 
 def tree_to_list(Tree):
@@ -117,6 +136,7 @@ class EntityCreationDialog(Dialog):
         super().__init__(title, content=content, parent=parent)
         self.setTitleBarVisible(False)
         self.contentLabel.hide()
+        self.flag = ""
 
         # Project 下拉菜单
         project_select_list = tree_to_list(get_workspace())
@@ -177,6 +197,9 @@ class EntityCreationDialog(Dialog):
         self.vBoxLayout.insertWidget(7, self.connectivity_selector, 1)
         self.vBoxLayout.insertWidget(8, self.lineEdit, 2)
 
+        # 重写底部按钮
+        self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
+        self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
         # 不同窗口控制不同控件的显隐
         if content == "Project" or content == "Subject":
             self.project_selector.show()
@@ -199,6 +222,13 @@ class EntityCreationDialog(Dialog):
             self.dtbModel_selector.show()
             self.dynamicModel_selector.hide()
             self.connectivity_selector.show()
+
+    def submit_date(self, str):
+        self.flag = str
+        self.close()
+
+    def getflag(self):
+        return self.flag
 
     def getData(self, type: str):
         """外部控件根据类型获取用户输入的信息"""
@@ -245,88 +275,94 @@ def show_dialog(type: str, project=None):
         title = "Please name your Workspace:"
         content = "\n| \n| \n| \n| \n|"
         w = WorkspaceInputDialog(title, content)
-        if w.exec():
-            str = w.lineEdit.text()
-            res = re.search("^\w{3,20}$", str)
-            if not res:
-                return False
-            else:
-                return str
+        res = False
+        w.exec()
+        if w.getflag() == "canel":
+            res = "canel"
         else:
-            return False
+            name = w.lineEdit.text().strip()
+            if re.match("^[0-9_a-zA-Z]{1,20}$", name):
+                res = name
+        return res
 
     if type == "Project":
         # 新建 Project 弹窗
         title = "Choose a parent Project \nAnd name your Project:"
         w = EntityCreationDialog(title, "Project", project=project)
-        if w.exec():
-            name = w.lineEdit.gettext()
-            res = re.search("^\w{3,20}$", name)
-            if not res:
-                return False
-            else:
-                return {"Project": w.getData("Project"), "name": name}
+        res = False
+        w.exec()
+        if w.getflag() == "canel":
+            res = "canel"
         else:
-            return False
+            name = w.lineEdit.gettext().strip()
+            if re.match(r"^.+$", name):
+                res = {"Project": w.getData("Project"), "name": name}
+        return res
 
     if type == "Subject":
         # 新建 Subject 弹窗
         title = "Choose a parent Project \nAnd name your Subject:"
         w = EntityCreationDialog(title, "Subject", project=project)
-        if w.exec():
-            name = w.lineEdit.gettext()
-            res = re.search("^\w{3,20}$", name)
-            if not res:
-                return False
-            else:
-                return {"Project": w.getData("Project"), "name": name}
+        res = False
+        w.exec()
+        if w.getflag() == "canel":
+            res = "canel"
         else:
-            return False
+            name = w.lineEdit.gettext().strip()
+            if re.match(r"^.+$", name):
+                res = {"Project": w.getData("Project"), "name": name}
+        return res
 
     if type == "DTBModel":
         # 新建 DTBModel 弹窗
         title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
         w = EntityCreationDialog(title, "DTBModel", project=project)
-        if w.exec():
-            name = w.lineEdit.gettext()
-            res = re.search("^\w{3,20}$", name)
+        res = False
+        w.exec()
+        if w.getflag() == "canel":
+            res = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            name_res = re.match(r"^.+$", name)
             if (
-                res == None
+                name_res == None
                 or w.getData("Atlas") == None
                 or w.getData("DynamicModel") == None
             ):
-                return False
+                res = False
             else:
-                return {
+                res = {
                     "Project": w.getData("Project"),
                     "Atlas": w.getData("Atlas"),
                     "DynamicModel": w.getData("DynamicModel"),
                     "name": name,
                 }
-        else:
-            return False
+        return res
 
     if type == "DTB":
         # 新建 DTB 弹窗
         title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
         w = EntityCreationDialog(title, "DTB", project=project)
-        if w.exec():
-            name = w.lineEdit.gettext()
-            res = re.search("^\w{3,20}$", name)
+        res = False
+        w.exec()
+        if w.getflag() == "canel":
+            res = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            name_res = re.match(r"^.+$", name)
             if (
-                res == None
+                name_res == None
                 or w.getData("Subject") == None
                 or w.getData("DTBModel") == None
                 or w.getData("Connectivity") == None
             ):
-                return False
+                res = False
             else:
-                return {
+                res = {
                     "Project": w.getData("Project"),
                     "Subject": w.getData("Subject"),
                     "DTBModel": w.getData("DTBModel"),
                     "Connectivity": w.getData("Connectivity"),
                     "name": name,
                 }
-        else:
-            return False
+        return res

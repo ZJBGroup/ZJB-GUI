@@ -67,8 +67,10 @@ class StartPanel(QtWidgets.QWidget):
 
     def _new_workspace(self):
         """新建一个工作空间"""
-        workspace_name = show_dialog(self.window(), "workspace")
-        if workspace_name:
+        workspace_name = show_dialog("workspace")
+        if workspace_name == "canel":
+            return
+        elif not workspace_name == False:
             w_path = QtWidgets.QFileDialog.getExistingDirectory(
                 self.window(), "New Workspace"
             )

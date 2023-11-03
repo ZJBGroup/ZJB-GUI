@@ -35,28 +35,25 @@ class NewEntityMenu(RoundMenu):
         self.action_delete = Action(
             FluentIcon.DELETE, "Delete", triggered=self._delete_entity
         )
-        self.addAction(self.action_project)
-        self.addAction(self.action_subject)
-        self.addAction(self.action_dtb_model)
-        self.addAction(self.action_dtb)
 
         if isinstance(self._item, Project):
             # 从列表右键点击一个 Project 打开菜单
-            self.setActionState(get_workspace())
-            self.removeAction(self.action_workspace)
-            self.addAction(self.action_delete)
+            self.addAction(self.action_project)
+            self.addAction(self.action_subject)
+            self.addAction(self.action_dtb_model)
+            self.addAction(self.action_dtb)
+            if not isinstance(self._item, Workspace):
+                self.addAction(self.action_delete)
         elif self._item == None:
             # 从标题栏点击 New 按钮，打开菜单
             self.setActionState(get_workspace())
-            self.insertAction(self.action_project, self.action_workspace)
-            self.removeAction(self.action_delete)
+            self.addAction(self.action_workspace)
+            self.addAction(self.action_project)
+            self.addAction(self.action_subject)
+            self.addAction(self.action_dtb_model)
+            self.addAction(self.action_dtb)
         else:
             # 从列表右键点击一个 非Project的实体
-            self.removeAction(self.action_workspace)
-            self.removeAction(self.action_project)
-            self.removeAction(self.action_subject)
-            self.removeAction(self.action_dtb_model)
-            self.removeAction(self.action_dtb)
             self.addAction(self.action_delete)
 
     def getTips(self, str):
@@ -81,7 +78,9 @@ class NewEntityMenu(RoundMenu):
     def _new_workspace(self):
         """点击 Workspace 按钮，新建Workspace"""
         workspace_name = show_dialog("workspace")
-        if workspace_name:
+        if workspace_name == "canel":
+            return
+        elif not workspace_name == False:
             w_path = QFileDialog.getExistingDirectory(self.window(), "New Workspace")
             if w_path:
                 workspace_path = f"{w_path}/{workspace_name}"
@@ -97,7 +96,10 @@ class NewEntityMenu(RoundMenu):
     def _new_project(self):
         """点击 Project 按钮， 新建 Project"""
         getdata = show_dialog("Project", project=self._item)
-        if getdata:
+        print("=============getdata", getdata)
+        if getdata == "canel":
+            return
+        elif not getdata == False:
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_project = parent_project.add_project(name)
@@ -111,7 +113,9 @@ class NewEntityMenu(RoundMenu):
     def _new_subject(self):
         """点击 Subject 按钮，新建 Subject"""
         getdata = show_dialog("Subject", project=self._item)
-        if getdata:
+        if getdata == "canel":
+            return
+        elif not getdata == False:
             parent_project: Project = getdata["Project"]
             name = getdata["name"]
             new_subject = parent_project.add_subject(name)
@@ -125,7 +129,9 @@ class NewEntityMenu(RoundMenu):
     def _new_dtb_model(self):
         """点击 DTBModel 按钮，新建 DTBModel"""
         getdata = show_dialog("DTBModel", project=self._item)
-        if getdata:
+        if getdata == "canel":
+            return
+        elif not getdata == False:
             parent_project: Project = getdata["Project"]
             select_atlas = getdata["Atlas"]
             select_dynamics = getdata["DynamicModel"]
@@ -145,7 +151,9 @@ class NewEntityMenu(RoundMenu):
     def _new_dtb(self):
         """点击 DTB 按钮，新建 DTB"""
         getdata = show_dialog("DTB", project=self._item)
-        if getdata:
+        if getdata == "canel":
+            return
+        elif not getdata == False:
             print("getdata:", getdata)
             parent_project: Project = getdata["Project"]
             select_subject = getdata["Subject"]

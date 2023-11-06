@@ -76,11 +76,13 @@ class WorkerCard(CardWidget):
 
     def _setWorking(self):
         """将UI样式设置为工作中的状态"""
+        self.setState("working")
         self.progressRing.setVisible(True)
         self.setStyleSheet("#WorkerTitle{color:red;font-size:20pt}")
 
     def _setIdle(self):
         """将UI样式设置为空闲的状态"""
+        self.setState("waiting")
         self.progressRing.setVisible(False)
         self.setStyleSheet("#WorkerTitle{color:green;font-size:20pt}")
 

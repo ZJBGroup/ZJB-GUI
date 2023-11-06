@@ -55,7 +55,7 @@ class WorkerPanel(SmoothScrollArea):
         self.main_layout.setAlignment(Qt.AlignTop)
 
         self.watch_cpu_info = QTimer(self)
-        self.watch_cpu_info.start(1000)
+        self.watch_cpu_info.start(2000)
         self.watch_cpu_info.timeout.connect(self.updateCPUInfo)
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
@@ -70,13 +70,18 @@ class WorkerPanel(SmoothScrollArea):
                 _cpu = round(pInformation.cpu_percent(), 4)
                 item.widget().setCpuInfo(_memory, _cpu)
                 if item.widget().getWorker().is_idle():
+                    item.widget()._setIdle()
                     if not item.widget().getWorker() in self.other_workers:
                         self.other_workers.append(item.widget().getWorker())
                         self.busy_workers.remove(item.widget().getWorker())
                 else:
+                    item.widget()._setWorking()
                     if not item.widget().getWorker() in self.busy_workers:
                         self.busy_workers.append(item.widget().getWorker())
                         self.other_workers.remove(item.widget().getWorker())
+                self._updateToolsBar(
+                    idle_num=len(self.other_workers), busy_num=len(self.busy_workers)
+                )
 
     def setWorkspace(self):
         """
@@ -140,10 +145,8 @@ class WorkerPanel(SmoothScrollArea):
         新增、删除 Worker 的时候 更新本地配置文件
         :param: worker_count: worker数目
         """
-        # return
         path = get_workspace_path()
         name = path.split("/")[len(path.split("/")) - 1]
-        print(name, path, worker_count)
         sync_recent_config(name, path, worker_count)
 
     def _addCard(self, item: Worker):

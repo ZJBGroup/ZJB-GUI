@@ -152,7 +152,7 @@ class RegionalTimeSeriesPage(BasePage):
 
             self.ui.time_slider.setValue(self.time)
             self.ui.time_edit.setText(
-                str(round(self.timeseries.time[self.time], 4)) + self.timeseries.sample_unit
+                str(round(self.timeseries.time[self.time], 4)) + self.timeseries.sample_unit.value
             )  # 保留4位小数
 
             if 0 <= self.time < self.max_time - self.ui.speed_slider.value():

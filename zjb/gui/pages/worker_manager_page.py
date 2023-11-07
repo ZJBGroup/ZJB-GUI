@@ -55,7 +55,7 @@ class WorkerPanel(SmoothScrollArea):
         self.main_layout.setAlignment(Qt.AlignTop)
 
         self.watch_cpu_info = QTimer(self)
-        self.watch_cpu_info.start(2000)
+        self.watch_cpu_info.start(1000)
         self.watch_cpu_info.timeout.connect(self.updateCPUInfo)
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)

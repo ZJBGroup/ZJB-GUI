@@ -72,7 +72,10 @@ class WorkerCard(CardWidget):
         self.outer_layout.setContentsMargins(20, 11, 11, 11)
         self.outer_layout.addLayout(self.button_Layout)
         self.outer_layout.addLayout(self.content_Layout)
-        self._setIdle()
+        if item.is_idle():
+            self._setIdle()
+        else:
+            self._setWorking()
 
     def _setWorking(self):
         """将UI样式设置为工作中的状态"""

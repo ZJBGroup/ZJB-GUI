@@ -22,10 +22,13 @@ from qfluentwidgets import (
     ScrollArea,
     TabBar,
     TabCloseButtonDisplayMode,
+    TransparentPushButton,
 )
+
 from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
+from zjb.gui.pages.jupyter_page import JupyterPage
 from zjb.gui.pages.setting_page import SettingInterface
 from zjb.gui.pages.welcome_page import WelcomePage
 from zjb.gui.panels.atlas_list_panel import AtlasInterface
@@ -47,12 +50,15 @@ class CustomTitleBar(MSFluentTitleBar):
         self.openButton.openWelcomePage.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit("Welcome", self._addWelcomePage)
         )
+        self.jupyterButton = TransparentPushButton("Jupyter")
+        self.jupyterButton.clicked.connect(JupyterPage.open)
 
         self.toolButtonLayout = QHBoxLayout()
         self.toolButtonLayout.setContentsMargins(0, 0, 0, 0)
         self.toolButtonLayout.setSpacing(0)
         self.toolButtonLayout.addWidget(self.newButton)
         self.toolButtonLayout.addWidget(self.openButton)
+        self.toolButtonLayout.addWidget(self.jupyterButton)
         self.hBoxLayout.insertLayout(4, self.toolButtonLayout)
 
     def _addWelcomePage(self, routeKey: str):

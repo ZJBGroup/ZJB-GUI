@@ -6,6 +6,7 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
+    QMessageBox,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
@@ -15,13 +16,14 @@ from PyQt5.QtWidgets import (
 from qfluentwidgets import (
     FluentIcon,
     FluentWindow,
+    MessageBox,
     MSFluentTitleBar,
     NavigationItemPosition,
     ScrollArea,
     TabBar,
     TabCloseButtonDisplayMode,
 )
-from zjb.gui._global import GLOBAL_SIGNAL
+from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
 from zjb.gui.pages.setting_page import SettingInterface
@@ -168,6 +170,7 @@ class MainWindow(FluentWindow):
         self.isMicaEnabled = False
         super().__init__()
         self.initWindow()
+        self.closeflag = False
 
         self.dtbWinInterface = DTBInterface(self)
         self.atlasInterface = AtlasInterface(self)
@@ -258,8 +261,38 @@ class MainWindow(FluentWindow):
 
     def setWorkspace(self, workspace: Workspace):
         self._work_space = workspace
-        print("self._work_space==============", self._work_space.name)
         self.dynamicModelInterface.setWorkspace(workspace)
+
+    def setCloseFlag(self, flag: bool):
+        self.closeflag = flag
+
+    def closeEvent(self, event):
+        """关闭窗口条件判断"""
+        ws: Workspace = get_workspace()
+        if ws == None:
+            event.accept()
+        else:
+            no_running_jobs = True
+            for jobitem in ws.manager.jobiter():
+                if jobitem.state.name == "RUNNING":
+                    no_running_jobs = False
+                    break
+            if no_running_jobs:
+                event.accept()
+            else:
+                w = MessageBox(
+                    "Warning",
+                    "There are still jobs being simulated. \nExiting now may cause some problems. \nDo you want to continue exiting?",
+                    self,
+                )
+                w.yesButton.setText("Yes")
+                w.yesSignal.connect(lambda: self.setCloseFlag(True))
+                w.cancelSignal.connect(lambda: self.setCloseFlag(False))
+                w.exec()
+                if self.closeflag:
+                    event.accept()
+                else:
+                    event.ignore()
 
 
 if __name__ == "__main__":

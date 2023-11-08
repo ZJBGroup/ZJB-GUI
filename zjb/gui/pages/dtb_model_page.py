@@ -13,9 +13,8 @@ from qfluentwidgets import (
 
 from zjb.main.api import (
     BOLD,
+    SOLVER_DICT,
     DTBModel,
-    EulerSolver,
-    HenuSolver,
     Monitor,
     Raw,
     Solver,
@@ -25,6 +24,7 @@ from zjb.main.api import (
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
+from ..widgets.dict_editor import KeySetDictEditor
 from ..widgets.editor import FloatEditor, IntEditor, LineEditor
 from ..widgets.instance_editor import (
     InstanceEditor,
@@ -113,8 +113,7 @@ class DTBModelPage(BasePage):
             )
         self.scrollLayout.addWidget(SubtitleLabel("Simulation configuration:"))
         # solver
-        solver_editor = SolverEditor(self.model.solver, listen_attrs=True)
-        solver_editor.valueChanged.connect(partial(setattr, self.model, "solver"))
+        solver_editor = ModelSolverEditor(self.model)
         self.scrollLayout.addRow(BodyLabel("solver:"), solver_editor)
         # monitor
         monitors_editor: ListEditor[Monitor] = ListEditor(
@@ -137,27 +136,40 @@ class DTBModelPage(BasePage):
         self.model.parameters |= {name: value}
 
 
-class SolverEditor(InstanceEditor[Solver]):
-    factories = [
-        InstanceEditorFactory[Solver].from_type(
-            EulerSolver,
-            [
-                InstanceEditorAttr("dt", FloatEditor),
-                # TODO: 使用DictEditor替代LineEditor
-                InstanceEditorAttr("noises", partial(LineEditor, _to=eval)),
-            ],
-            "Euler",
-        ),
-        InstanceEditorFactory[Solver].from_type(
-            HenuSolver,
-            [
-                InstanceEditorAttr("dt", FloatEditor),
-                # TODO: 使用DictEditor替代LineEditor
-                InstanceEditorAttr("noises", partial(LineEditor, _to=eval)),
-            ],
-            "Henu",
-        ),
-    ]
+class ModelSolverEditor(InstanceEditor[Solver]):
+    def __init__(self, model: DTBModel, parent=None):
+        self._model = model
+        self._init_factories()
+        super().__init__(model.solver, True, parent)
+
+        self.valueChanged.connect(self._value_changed)
+
+    def _value_changed(self, value):
+        self._model.solver = value
+
+    def _init_factories(self):
+        self._public_attr_factories = [
+            InstanceEditorAttr("dt", FloatEditor),
+            InstanceEditorAttr("noises", self._noise_editor),
+        ]
+
+        self.factories = [
+            InstanceEditorFactory[Solver].from_type(
+                solver, self._public_attr_factories, name
+            )
+            for name, solver in SOLVER_DICT.items()
+        ]
+
+    def _noise_editor(self):
+        keys = list(self._model.dynamics.state_variables)
+        editor = KeySetDictEditor(
+            keys,
+            lambda _: 0,
+            FloatEditor,
+            key2str=partial(expression2unicode, rich=False),
+            listen_items=True,
+        )
+        return editor
 
 
 class MonitorEditor(InstanceEditor[Monitor]):

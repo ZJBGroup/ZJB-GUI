@@ -2,6 +2,7 @@ import numpy as np
 import pyqtgraph.opengl as gl
 from PyQt5 import QtCore
 from qfluentwidgets import FluentIcon
+import sip
 
 from zjb.main.api import Atlas, RegionalTimeSeries, Subject
 
@@ -26,6 +27,7 @@ class RegionalTimeSeriesPage(BasePage):
         self.ui = Ui_time_series_page()
         self.ui.setupUi(self)
 
+        self.ui.time_edit.setMinimumSize(160, 20)
         self._set_time_series()
         self._show_atlas()
         self.ui.brain_regions_panel.region_signal_list.connect(
@@ -130,38 +132,41 @@ class RegionalTimeSeriesPage(BasePage):
         ] = self.timeseries.data[:, self.list_selected_regions]
 
         def _time_update():
-            regionColor = (
-                self.selected_timeseries_data[self.time] - self.colorbar_min
-            ) / (self.colorbar_max - self.colorbar_min)
-            self.ui.atlas_surface_view_widget.ampl = np.array(regionColor)[
-                self.ui.atlas_surface_view_widget.labels
-            ]
-            colors = self.ui.atlas_surface_view_widget.color_map.map(
-                self.ui.atlas_surface_view_widget.ampl, mode="float"
-            )
-            colors[
-                self.selected_timeseries_data[
-                    self.time, np.squeeze(self.ui.atlas_surface_view_widget.labels)
-                ]
-                == 0,
-                :,
-            ] = [0.7, 0.7, 0.7, 1]
-            self.ui.atlas_surface_view_widget.md.setVertexColors(colors)
-            self.ui.atlas_surface_view_widget.surface.vertexes = None
-            self.ui.atlas_surface_view_widget.surface.update()
-
-            self.ui.time_slider.setValue(self.time)
-            self.ui.time_edit.setText(
-                str(round(self.timeseries.time[self.time], 4)) + self.timeseries.sample_unit.value
-            )  # 保留4位小数
-
-            if 0 <= self.time < self.max_time - self.ui.speed_slider.value():
-                self.time += self.ui.speed_slider.value()
-            else:
+            if sip.isdeleted(self):
                 self.timer.stop()
-                self.ui.speed_slider.setValue(0)
-                self.ui.start_btn.setText("Start")
-                self.ui.start_btn.setChecked(True)
+            else:
+                regionColor = (
+                    self.selected_timeseries_data[self.time] - self.colorbar_min
+                ) / (self.colorbar_max - self.colorbar_min)
+                self.ui.atlas_surface_view_widget.ampl = np.array(regionColor)[
+                    self.ui.atlas_surface_view_widget.labels
+                ]
+                colors = self.ui.atlas_surface_view_widget.color_map.map(
+                    self.ui.atlas_surface_view_widget.ampl, mode="float"
+                )
+                colors[
+                    self.selected_timeseries_data[
+                        self.time, np.squeeze(self.ui.atlas_surface_view_widget.labels)
+                    ]
+                    == 0,
+                    :,
+                ] = [0.7, 0.7, 0.7, 1]
+                self.ui.atlas_surface_view_widget.md.setVertexColors(colors)
+                self.ui.atlas_surface_view_widget.surface.vertexes = None
+                self.ui.atlas_surface_view_widget.surface.update()
+
+                self.ui.time_slider.setValue(self.time)
+                self.ui.time_edit.setText(
+                    str(round(self.timeseries.time[self.time], 4)) + self.timeseries.sample_unit.value
+                )  # 保留4位小数
+
+                if 0 <= self.time < self.max_time - self.ui.speed_slider.value():
+                    self.time += self.ui.speed_slider.value()
+                else:
+                    self.timer.stop()
+                    self.ui.speed_slider.setValue(0)
+                    self.ui.start_btn.setText("Start")
+                    self.ui.start_btn.setChecked(True)
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(_time_update)
@@ -178,3 +183,7 @@ class RegionalTimeSeriesPage(BasePage):
             self.selected_timeseries_data[
                 :, self.list_selected_regions
             ] = self.timeseries.data[:, self.list_selected_regions]
+
+    def closeEvent(self, event):
+    # 停止定时器
+        self.timer.stop()

@@ -1,0 +1,3 @@
+include zjb/gui/_rc/colorbar/*.csv
+recursive-include zjb/gui/_rc/icon *
+recursive-include zjb/gui/_rc/qss *.qss

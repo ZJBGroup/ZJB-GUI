@@ -15,12 +15,13 @@ from qfluentwidgets import (
 )
 
 from zjb.doj.job import GeneratorJob, Job
-from zjb.main.api import DTB, SimulationResult
+from zjb.main.api import DTB, PSEResult, SimulationResult
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
 from ..panels.data_operation_panel import DataOperationPanel
+from ..widgets.choose_data_dialog import ChooseDataDialog
 from ..widgets.dict_editor import KeySetDictEditor
 from ..widgets.editor import LineEditor
 from .base_page import BasePage
@@ -75,9 +76,17 @@ class DTBPage(BasePage):
         self.scrollLayout = QFormLayout(self.scrollWidget)
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
+        def _create_data_button(name, data):
+            btn_data = TransparentPushButton(f"{name}")
+            btn_data.clicked.connect(lambda: self._show_data_dialog(name, data))
+            self.scrollLayout.addRow(btn_data)
+
         for name, data in self.dtb.data.items():
-            data_manipulation_panel = DataOperationPanel(name, data)
-            self.scrollLayout.addRow(data_manipulation_panel)
+            if isinstance(data, SimulationResult) or isinstance(data, PSEResult):
+                _create_data_button(name, data)
+            else:
+                data_manipulation_panel = DataOperationPanel(name, data)
+                self.scrollLayout.addRow(data_manipulation_panel)
 
     def _simulate(self):
         job = Job(DTB.simulate, self.dtb)
@@ -116,6 +125,12 @@ class DTBPage(BasePage):
         GLOBAL_SIGNAL.requestAddPage.emit(
             connectivity._gid.str, lambda _: ConnectivityPage(connectivity)
         )
+
+    def _show_data_dialog(self, name, data):
+        title = f"Data in {name}"
+        content = """Select data for visualization or analysis."""
+        w = ChooseDataDialog(data, self)
+        w.exec()
 
 
 class PSEDialog(MessageBoxBase):

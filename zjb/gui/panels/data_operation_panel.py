@@ -1,16 +1,16 @@
-from PyQt5.QtWidgets import QWidget
-from qfluentwidgets import BodyLabel, TransparentPushButton, PrimaryPushButton
-from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtWidgets import QHBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, PrimaryPushButton, TransparentPushButton
+
+from zjb.main.api import Connectivity, RegionalTimeSeries, SimulationResult, Surface
+
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..pages.analysis_page import AnalysisPage
 from ..pages.connectivity_page import ConnectivityPage
 from ..pages.surface_page import SurfacePage
 from ..pages.time_series_page import RegionalTimeSeriesPage
-from zjb.main.api import SimulationResult, Surface, Connectivity
 
 
 class DataOperationPanel(QWidget):
-
     def __init__(self, name, data, subject=None, parent=None):
         super().__init__(parent=parent)
         self.setObjectName("DataManipulation")
@@ -32,8 +32,8 @@ class DataOperationPanel(QWidget):
 
     def _setup_ui(self):
         self.hBoxLayout = QHBoxLayout(self)
-        btn_visualization = TransparentPushButton('Visualization')
-        btn_analysis = TransparentPushButton('Analysis')
+        btn_visualization = TransparentPushButton("Visualization")
+        btn_analysis = TransparentPushButton("Analysis")
         btn_visualization.clicked.connect(self._click_visualization)
         btn_analysis.clicked.connect(self._click_analysis)
 
@@ -48,7 +48,7 @@ class DataOperationPanel(QWidget):
             self._workspace = get_workspace()
 
             GLOBAL_SIGNAL.requestAddPage.emit(
-                timeseries._gid.str + 'Visualization',
+                timeseries._gid.str + "Visualization",
                 lambda _: RegionalTimeSeriesPage(timeseries, self.subject),
             )
 
@@ -64,32 +64,36 @@ class DataOperationPanel(QWidget):
                 lambda _: ConnectivityPage(self.data),
             )
 
+        elif isinstance(self.data, RegionalTimeSeries):
+            GLOBAL_SIGNAL.requestAddPage.emit(
+                self.data._gid.str,
+                lambda _: RegionalTimeSeriesPage(self.data, self.subject),
+            )
+
     def _click_analysis(self):
         if isinstance(self.data, SimulationResult):
             timeseries = self.data.data[0]
             self._workspace = get_workspace()
 
             GLOBAL_SIGNAL.requestAddPage.emit(
-                timeseries._gid.str + 'Analysis',
+                timeseries._gid.str + "Analysis",
                 lambda _: AnalysisPage(timeseries),
             )
 
         elif isinstance(self.data, Surface):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                self.data._gid.str + 'Analysis',
+                self.data._gid.str + "Analysis",
                 lambda _: AnalysisPage(self.data),
             )
 
         elif isinstance(self.data, Connectivity):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                self.data._gid.str + 'Analysis',
+                self.data._gid.str + "Analysis",
                 lambda _: AnalysisPage(self.data),
             )
 
-
-
-
-
-
-
-
+        elif isinstance(self.data, RegionalTimeSeries):
+            GLOBAL_SIGNAL.requestAddPage.emit(
+                self.data._gid.str + "Analysis",
+                lambda _: AnalysisPage(self.data),
+            )

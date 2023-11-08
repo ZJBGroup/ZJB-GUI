@@ -36,6 +36,7 @@ class DictEditor(Editor, QWidget, Generic[K, V]):
         key2str: Callable[[Any], str] = str,
         can_add=False,
         can_remove=False,
+        listen_items=False,
         parent=None,
     ):
         super().__init__(parent=parent)
@@ -45,6 +46,7 @@ class DictEditor(Editor, QWidget, Generic[K, V]):
         self._key2str = key2str
         self._can_add = can_add
         self._can_remove = can_remove
+        self.listen_items = listen_items
 
         self._value: dict[K, V] = {} if value is None else value
 
@@ -89,6 +91,8 @@ class DictEditor(Editor, QWidget, Generic[K, V]):
     def _item_changed(self, key: K, value: V):
         self._value[key] = value
         self.itemChanged.emit(key, value)
+        if self.listen_items:
+            self.valueChanged.emit(self._value)
 
     def _add(self):
         key, value = self._item_factory()
@@ -97,14 +101,23 @@ class DictEditor(Editor, QWidget, Generic[K, V]):
         self._add_row(key, value)
         self._value[key] = value
         self.itemAdded.emit(key, value)
+        if self.listen_items:
+            self.valueChanged.emit(self._value)
 
     def _remove(self, key: K):
         index = list(self._value.keys()).index(key)
         self.formLayout.removeRow(index)
         value = self._value.pop(key)
         self.itemRemoved.emit(key, value)
+        if self.listen_items:
+            self.valueChanged.emit(self._value)
 
-    def setCanAdd(self, can_add):
+    @property
+    def can_add(self):
+        return self._can_add
+
+    @can_add.setter
+    def can_add(self, can_add: bool):
         if self._can_add == can_add:
             return
         if can_add:
@@ -129,8 +142,7 @@ class KeySetDictEditor(DictEditor[K, V]):
         editor_factory: Callable[[], EditorType],
         value: dict[K, V] | None = None,
         key2str: Callable[[Any], str] = str,
-        can_add=False,
-        can_remove=False,
+        listen_items=False,
         dialog_parent=None,
         parent=None,
     ):
@@ -139,14 +151,22 @@ class KeySetDictEditor(DictEditor[K, V]):
             editor_factory,
             value,
             key2str,
-            can_add,
-            can_remove,
+            True,
+            True,
+            listen_items,
             parent,
         )
         self._labels = {key: key2str(key) for key in keys}
         self._value_factory = value_factory
-        self._left_keys = list(self._labels)
+        self._left_keys = [key for key in keys if key not in self._value]
         self._dialog_parent = dialog_parent
+
+    def setValue(self, value: dict[K, V]):
+        super().setValue(value)
+        # update left keys
+        self._left_keys = [key for key in self._labels if key not in self._value]
+        if not self._left_keys:
+            self.can_add = False
 
     def _add(self):
         left_labels = [self._labels[key] for key in self._left_keys]
@@ -162,15 +182,17 @@ class KeySetDictEditor(DictEditor[K, V]):
         self._add_row(key, value)
         self._value[key] = value
         self.itemAdded.emit(key, value)
+        if self.listen_items:
+            self.valueChanged.emit(self._value)
 
         self._left_keys.pop(index)
         if not self._left_keys:
-            self.setCanAdd(False)
+            self.can_add = False
 
     def _remove(self, key: K):
         super()._remove(key)
         self._left_keys.append(key)
-        self.setCanAdd(True)
+        self.can_add = True
 
 
 class ComboBoxDialog(MessageBoxBase):

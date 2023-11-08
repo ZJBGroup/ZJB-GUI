@@ -144,16 +144,13 @@ class PSEDialog(MessageBoxBase):
         self.params_editors = KeySetDictEditor(
             self._parameters,
             lambda key: [self._parameters[key]],
-            partial(LineEditor, _to=self._str2list, _from=self._list2str),
+            partial(LineEditor, _to=self._str2list),
             self._params,
             key2str=partial(expression2unicode, rich=False),
-            can_add=True,
-            can_remove=True,
+            listen_items=True,
             dialog_parent=self.parent(),
         )
-        self.params_editors.itemAdded.connect(self._ps_changed)
-        self.params_editors.itemChanged.connect(self._ps_changed)
-        self.params_editors.itemRemoved.connect(self._ps_changed)
+        self.params_editors.valueChanged.connect(self._ps_changed)
         self.scrollLayout.setWidget(self.params_editors)
 
         self.stat_label = BodyLabel("0 parameters will be simulated")
@@ -170,9 +167,6 @@ class PSEDialog(MessageBoxBase):
     def _str2list(self, _str: str):
         return list(eval(_str, {"linspace": np.linspace, "arange": np.arange}))
 
-    def _list2str(self, _list):
-        return ",".join(map(str, _list))
-
-    def _ps_changed(self, key, value):
+    def _ps_changed(self, _):
         sizes = [str(len(para)) for para in self._params.values()]
         self.stat_label.setText(f"{'×'.join(sizes)} parameters will be simulated")

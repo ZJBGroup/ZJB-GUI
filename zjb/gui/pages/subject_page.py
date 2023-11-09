@@ -1,20 +1,21 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFileDialog, QFormLayout, QVBoxLayout
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     ComboBox,
     FluentIcon,
+    IconWidget,
     LineEdit,
     MessageBoxBase,
     PrimaryPushButton,
     SubtitleLabel,
     TitleLabel,
 )
-
 from zjb.main.api import RegionalConnectivity, RegionSpace, Subject
 
 from .._global import get_workspace
 from ..common.utils import show_error
+from ..panels.data_list_panel import DataListPanel
 from ..panels.data_operation_panel import DataOperationPanel
 from ..widgets.file_editor import OpenFileEditor
 from .base_page import BasePage
@@ -24,31 +25,55 @@ class SubjectPage(BasePage):
     def __init__(self, subject: Subject):
         super().__init__(subject._gid.str, subject.name, FluentIcon.PEOPLE)
         self.subject = subject
-
+        self._workspace = get_workspace()
         self._setup_ui()
+
+        self.subject.observe(self.updata_list, "data", dispatch="same")
 
     def _setup_ui(self):
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.vBoxLayout.addWidget(TitleLabel("Subject"))
-        self.formLayout = QFormLayout()
-        self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.vBoxLayout.addLayout(self.formLayout)
+        # 页面信息部分
+        self.info_panel = QWidget(self)
+        self.info_panel_layout = QHBoxLayout(self.info_panel)
+        self.info_panel_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.formLayout.addRow(BodyLabel("name:"), BodyLabel(self.subject.name))
-        self.formLayout.addRow(BodyLabel("info:"), BodyLabel("..."))
+        self.pageicon = IconWidget(FluentIcon.PEOPLE, self)
+        self.pageicon.setFixedSize(140, 140)
+        self.info_panel_layout.addWidget(self.pageicon)
 
+        # 信息部分右侧文字及按钮部分
+        self.detail_panel = QWidget(self)
+        self.detail_panel.setMinimumHeight(40)
+        self.detail_panel_layout = QVBoxLayout(self.detail_panel)
+        self.detail_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.detail_panel_layout.setContentsMargins(30, 0, 0, 0)
+        self.detail_panel_layout.addWidget(TitleLabel(self.subject.name))
+        self.detail_panel_layout.addWidget(BodyLabel("info: ..."))
+
+        # 按钮组
+        self.button_group = QWidget(self)
+        self.button_group_layout = QHBoxLayout(self.button_group)
+        self.button_group_layout.setContentsMargins(0, 25, 0, 0)
         self.btn_import_connectivity = PrimaryPushButton("Import Connectivity")
         self.btn_import_connectivity.clicked.connect(self._import_connectivity)
-        self.vBoxLayout.addWidget(self.btn_import_connectivity)
+        self.button_group_layout.addWidget(self.btn_import_connectivity)
 
-        for name, data in self.subject.data.items():
-            data_manipulation_panel = DataOperationPanel(name, data)
-            self.formLayout.addRow(data_manipulation_panel)
+        self.detail_panel_layout.addWidget(self.button_group)
+        self.info_panel_layout.addWidget(self.detail_panel)
+        self.vBoxLayout.addWidget(self.info_panel)
+
+        self.vBoxLayout.addWidget(
+            SubtitleLabel(f"Connectivity in {self.subject.name}:")
+        )
+        # 数据列表
+        self.data_list = DataListPanel("subject data", self.subject.data.items(), self)
+        self.vBoxLayout.addWidget(self.data_list)
 
     def _import_connectivity(self):
-        dialog = ImportConnectivityDialog(self)
+        """导入连接的 方法"""
+        dialog = ImportConnectivityDialog(self.window())
         if dialog.exec():
             name = dialog.edit_text.text()
             if not name:
@@ -58,6 +83,10 @@ class SubjectPage(BasePage):
                 dialog.file_eidtor.text(), dialog.current_space
             )
             self.subject.data |= {name: connectivity}
+
+    def updata_list(self, data):
+        """添加新的数据以后，调用方法更新数据列表"""
+        self.data_list.sync_list(data.new)
 
 
 class ImportConnectivityDialog(MessageBoxBase):

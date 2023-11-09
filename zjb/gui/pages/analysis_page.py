@@ -19,12 +19,12 @@ from qfluentwidgets import (
     Dialog,
     FluentIcon,
     LineEdit,
+    MessageBoxBase,
     PrimaryPushButton,
     SmoothScrollArea,
     TitleLabel,
     TransparentDropDownPushButton,
     TransparentPushButton,
-    MessageBoxBase
 )
 
 from zjb.main.api import (
@@ -86,8 +86,7 @@ class AnalysisPage(BasePage):
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         for trait_name in list(self.data.trait_get().keys()):
-            trait_content = self.data.trait_get()[trait_name]
-            btn_trait = TransparentPushButton(f"{trait_content}")
+            btn_trait = self._create_data_button(trait_name)
             self.scrollLayout.addRow(BodyLabel(trait_name + ": "), btn_trait)
 
         self.scrollLayout.addItem(self.spacerItem)
@@ -146,8 +145,7 @@ class AnalysisPage(BasePage):
             scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
             for trait_name in list(analysis_data.trait_get().keys()):
-                trait_content = analysis_data.trait_get()[trait_name]
-                btn_trait = TransparentPushButton(f"{trait_content}")
+                btn_trait = self._create_data_button(trait_name)
                 scrollLayout.addRow(BodyLabel(trait_name + ": "), btn_trait)
             vBoxLayout_2.addLayout(scrollLayout)
 
@@ -281,16 +279,16 @@ class AnalysisPage(BasePage):
 
     def _compare_others(self):
         w = CompareDialog(self)
-        # w.setTitleBarVisible(False)
         if w.exec():
             for project in get_workspace().children:
                 for dtb in project.dtbs:
                     for data in dtb.data:
                         if data == w.combox_data.currentText():
                             compare_data = dtb.data[data].data[0]
+            self._add_analysis(compare_data, compare=True)
+
         else:
             print("Cancel button is pressed")
-        self._add_analysis(compare_data, compare=True)
 
     def _delete_all_in_layout(self, thisLayout):
         item_list = list(range(thisLayout.count()))
@@ -307,11 +305,23 @@ class AnalysisPage(BasePage):
                     self._delete_all_in_layout(item.layout())
                 thisLayout.removeItem(item)
 
+    def _show_trait_data(self, name, data):
+        w = ShowDataDialog(name, data, self)
+        w.exec()
+
+    def _create_data_button(self, trait_name):
+        trait_content = self.data.trait_get()[trait_name]
+        btn_trait = TransparentPushButton(f"{trait_content}")
+        btn_trait.setMaximumSize(10000, 100)
+        btn_trait.clicked.connect(
+            lambda: self._show_trait_data(trait_name, str(trait_content))
+        )
+        return btn_trait
+
 
 class CompareDialog(MessageBoxBase):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-
         self._setup_ui()
 
     def _setup_ui(self):
@@ -325,5 +335,19 @@ class CompareDialog(MessageBoxBase):
                 for data in dtb.data:
                     self.combox_data.addItem(data)
         self.viewLayout.addWidget(self.combox_data)
+
+        self.cancelButton.hide()
+
+
+class ShowDataDialog(MessageBoxBase):
+    def __init__(self, name, data, parent=None):
+        super().__init__(parent=parent)
+        self.trait_name = name
+        self.trait_data = data
+        self._setup_ui()
+
+    def _setup_ui(self):
+        self.viewLayout.addWidget(TitleLabel(self.trait_name))
+        self.viewLayout.addWidget(BodyLabel(f"{self.trait_data}"))
 
         self.cancelButton.hide()

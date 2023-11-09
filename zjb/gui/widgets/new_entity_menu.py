@@ -1,5 +1,6 @@
 # coding:utf-8
 import os
+import re
 
 from PyQt5.QtWidgets import QFileDialog
 from qfluentwidgets import Action, FluentIcon, RoundMenu
@@ -9,7 +10,7 @@ from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 from .._global import GLOBAL_SIGNAL, get_workspace, open_workspace
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
-from .input_name_dialog import show_dialog
+from .input_name_dialog import EntityCreationDialog, dialog_workspace
 
 
 class NewEntityMenu(RoundMenu):
@@ -77,7 +78,7 @@ class NewEntityMenu(RoundMenu):
 
     def _new_workspace(self):
         """点击 Workspace 按钮，新建Workspace"""
-        workspace_name = show_dialog("workspace")
+        workspace_name = dialog_workspace(parent=self._window)
         if workspace_name == "canel":
             return
         elif not workspace_name == False:
@@ -95,7 +96,17 @@ class NewEntityMenu(RoundMenu):
 
     def _new_project(self):
         """点击 Project 按钮， 新建 Project"""
-        getdata = show_dialog("Project", project=self._item)
+        title = "Choose a parent Project \nAnd name your Project:"
+        w = EntityCreationDialog(title, "Project", self._item, self._window)
+        getdata = False
+        w.exec()
+        if w.getflag() == "canel":
+            getdata = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            if re.match(r"^.+$", name):
+                getdata = {"Project": w.getData("Project"), "name": name}
+
         if getdata == "canel":
             return
         elif not getdata == False:
@@ -111,7 +122,17 @@ class NewEntityMenu(RoundMenu):
 
     def _new_subject(self):
         """点击 Subject 按钮，新建 Subject"""
-        getdata = show_dialog("Subject", project=self._item)
+        title = "Choose a parent Project \nAnd name your Subject:"
+        w = EntityCreationDialog(title, "Subject", self._item, self._window)
+        getdata = False
+        w.exec()
+        if w.getflag() == "canel":
+            getdata = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            if re.match(r"^.+$", name):
+                getdata = {"Project": w.getData("Project"), "name": name}
+
         if getdata == "canel":
             return
         elif not getdata == False:
@@ -127,7 +148,29 @@ class NewEntityMenu(RoundMenu):
 
     def _new_dtb_model(self):
         """点击 DTBModel 按钮，新建 DTBModel"""
-        getdata = show_dialog("DTBModel", project=self._item)
+        title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
+        w = EntityCreationDialog(title, "DTBModel", self._item, self._window)
+        getdata = False
+        w.exec()
+        if w.getflag() == "canel":
+            getdata = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            name_res = re.match(r"^.+$", name)
+            if (
+                name_res == None
+                or w.getData("Atlas") == None
+                or w.getData("DynamicModel") == None
+            ):
+                getdata = False
+            else:
+                getdata = {
+                    "Project": w.getData("Project"),
+                    "Atlas": w.getData("Atlas"),
+                    "DynamicModel": w.getData("DynamicModel"),
+                    "name": name,
+                }
+
         if getdata == "canel":
             return
         elif not getdata == False:
@@ -149,11 +192,34 @@ class NewEntityMenu(RoundMenu):
 
     def _new_dtb(self):
         """点击 DTB 按钮，新建 DTB"""
-        getdata = show_dialog("DTB", project=self._item)
+        title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
+        w = EntityCreationDialog(title, "DTB", self._item, self._window)
+        getdata = False
+        w.exec()
+        if w.getflag() == "canel":
+            getdata = "canel"
+        else:
+            name = w.lineEdit.gettext().strip()
+            name_res = re.match(r"^.+$", name)
+            if (
+                name_res == None
+                or w.getData("Subject") == None
+                or w.getData("DTBModel") == None
+                or w.getData("Connectivity") == None
+            ):
+                getdata = False
+            else:
+                getdata = {
+                    "Project": w.getData("Project"),
+                    "Subject": w.getData("Subject"),
+                    "DTBModel": w.getData("DTBModel"),
+                    "Connectivity": w.getData("Connectivity"),
+                    "name": name,
+                }
+
         if getdata == "canel":
             return
         elif not getdata == False:
-            print("getdata:", getdata)
             parent_project: Project = getdata["Project"]
             select_subject = getdata["Subject"]
             select_model = getdata["DTBModel"]

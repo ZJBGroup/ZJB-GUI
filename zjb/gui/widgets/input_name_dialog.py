@@ -1,39 +1,44 @@
 import re
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 from qfluentwidgets import (
     CaptionLabel,
     ComboBox,
-    Dialog,
     LineEdit,
-    PrimaryPushButton,
-    PushButton,
+    MessageBoxBase,
+    SubtitleLabel,
 )
 from zjb.dos.data import Data
-from zjb.main.api import Project, SpaceCorrelation, Subject, Workspace
+from zjb.main.api import Project, SpaceCorrelation, Subject
 
 from .._global import get_workspace
 
 
-class WorkspaceInputDialog(Dialog):
+class WorkspaceInputDialog(MessageBoxBase):
     """输入工作空间名称的弹窗类"""
 
-    def __init__(self, title: str, content: str, parent=None):
-        super().__init__(title, content=content, parent=parent)
-        self.setTitleBarVisible(False)
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent=parent)
         self.flag = ""
+        self.titleLabel = SubtitleLabel(title)
+        self.titleLabel.setContentsMargins(0, 0, 0, 10)
+        self.viewLayout.addWidget(self.titleLabel)
+
         self.lineEdit = LineEdit(self)
+        self.lineEdit.setFixedSize(250, 33)
+        self.lineEdit.setClearButtonEnabled(True)
+        self.lineEdit.move(45, 70)
+
         tips = "Please enter 1 to 20 characters consisting of '0-9','a-z','A-Z','_'"
         self.tipsLabel = CaptionLabel(tips, self)
         self.tipsLabel.setTextColor("#606060", "#d2d2d2")
         self.tipsLabel.setObjectName("contentLabel")
         self.tipsLabel.setWordWrap(True)
         self.tipsLabel.setFixedSize(250, 40)
-        self.lineEdit.setFixedSize(250, 33)
-        self.lineEdit.setClearButtonEnabled(True)
-        self.lineEdit.move(45, 70)
         self.tipsLabel.move(47, 110)
+        self.viewLayout.addWidget(self.lineEdit)
+        self.viewLayout.addWidget(self.tipsLabel)
 
         # 重写底部按钮
         self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
@@ -79,8 +84,7 @@ class SelectWidget(QWidget):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.selectlabel)
         self.layout.addWidget(self._comboBox)
-        self.setContentsMargins(15, 00, 15, 00)
-        self.layout.setSpacing(5)
+        self.setContentsMargins(0, 0, 0, 0)
         self._comboBox.currentIndexChanged.connect(self.dateChanged)
 
     def getCurrentValue(self):
@@ -121,22 +125,23 @@ class InputWidget(QWidget):
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.inputlabel)
         self.layout.addWidget(self._inputBox)
-        self.setContentsMargins(15, 00, 15, 00)
-        self.layout.setSpacing(5)
+        self.setContentsMargins(0, 0, 0, 0)
 
     def gettext(self):
         """获取输入框中的值"""
         return self._inputBox.text()
 
 
-class EntityCreationDialog(Dialog):
+class EntityCreationDialog(MessageBoxBase):
     """创建 Project Subject DTBModel DTB 弹窗选择关联的实体"""
 
-    def __init__(self, title: str, content="", parent=None, project: Project = None):
-        super().__init__(title, content=content, parent=parent)
-        self.setTitleBarVisible(False)
-        self.contentLabel.hide()
+    def __init__(self, title: str, type="", project: Project = None, parent=None):
+        super().__init__(parent=parent)
         self.flag = ""
+        self.titleLabel = SubtitleLabel(title)
+        self.titleLabel.setContentsMargins(0, 0, 0, 20)
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.setSpacing(0)
 
         # Project 下拉菜单
         project_select_list = tree_to_list(get_workspace())
@@ -190,33 +195,33 @@ class EntityCreationDialog(Dialog):
         )
         self.subject_selector.selectedDateChanged.connect(self.updateConnectivityList)
 
-        self.vBoxLayout.insertWidget(2, self.project_selector, 1)
-        self.vBoxLayout.insertWidget(3, self.subject_selector, 1)
-        self.vBoxLayout.insertWidget(4, self.atlas_selector, 1)
-        self.vBoxLayout.insertWidget(5, self.dynamicModel_selector, 1)
-        self.vBoxLayout.insertWidget(6, self.dtbModel_selector, 1)
-        self.vBoxLayout.insertWidget(7, self.connectivity_selector, 1)
-        self.vBoxLayout.insertWidget(8, self.lineEdit, 2)
+        self.viewLayout.addWidget(self.project_selector)
+        self.viewLayout.addWidget(self.subject_selector)
+        self.viewLayout.addWidget(self.atlas_selector)
+        self.viewLayout.addWidget(self.dynamicModel_selector)
+        self.viewLayout.addWidget(self.dtbModel_selector)
+        self.viewLayout.addWidget(self.connectivity_selector)
+        self.viewLayout.addWidget(self.lineEdit)
 
         # 重写底部按钮
         self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
         self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
         # 不同窗口控制不同控件的显隐
-        if content == "Project" or content == "Subject":
+        if type == "Project" or type == "Subject":
             self.project_selector.show()
             self.subject_selector.hide()
             self.atlas_selector.hide()
             self.dtbModel_selector.hide()
             self.dynamicModel_selector.hide()
             self.connectivity_selector.hide()
-        if content == "DTBModel":
+        if type == "DTBModel":
             self.project_selector.show()
             self.subject_selector.hide()
             self.atlas_selector.show()
             self.dtbModel_selector.hide()
             self.dynamicModel_selector.show()
             self.connectivity_selector.hide()
-        if content == "DTB":
+        if type == "DTB":
             self.project_selector.show()
             self.subject_selector.show()
             self.atlas_selector.hide()
@@ -262,110 +267,22 @@ class EntityCreationDialog(Dialog):
         self.connectivity_selector.updateSelectList(connectivityitems)
 
 
-def show_dialog(type: str, project=None):
-    """配置弹窗并显示，用户输入符合标准的名称后将其返回
+def dialog_workspace(parent=None):
+    """新建 Workspace 弹窗
 
     Parameters
     ----------
-    type : str
-        根据种类控制弹窗中不同控件的显隐
-    project : Project | None
-        传入的项目，传入为None时，表示从标题栏点入，否则为列表点入
-
+    parent :
+        父级窗口
     """
-    if type == "workspace":
-        # 新建 Workspace 弹窗
-        title = "Please name your Workspace:"
-        content = "\n| \n| \n| \n| \n|"
-        w = WorkspaceInputDialog(title, content)
-        res = False
-        w.exec()
-        if w.getflag() == "canel":
-            res = "canel"
-        else:
-            name = w.lineEdit.text().strip()
-            if re.match("^[0-9_a-zA-Z]{1,20}$", name):
-                res = name
-        return res
-
-    if type == "Project":
-        # 新建 Project 弹窗
-        title = "Choose a parent Project \nAnd name your Project:"
-        w = EntityCreationDialog(title, "Project", project=project)
-        res = False
-        w.exec()
-        if w.getflag() == "canel":
-            res = "canel"
-        else:
-            name = w.lineEdit.gettext().strip()
-            if re.match(r"^.+$", name):
-                res = {"Project": w.getData("Project"), "name": name}
-        return res
-
-    if type == "Subject":
-        # 新建 Subject 弹窗
-        title = "Choose a parent Project \nAnd name your Subject:"
-        w = EntityCreationDialog(title, "Subject", project=project)
-        res = False
-        w.exec()
-        if w.getflag() == "canel":
-            res = "canel"
-        else:
-            name = w.lineEdit.gettext().strip()
-            if re.match(r"^.+$", name):
-                res = {"Project": w.getData("Project"), "name": name}
-        return res
-
-    if type == "DTBModel":
-        # 新建 DTBModel 弹窗
-        title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
-        w = EntityCreationDialog(title, "DTBModel", project=project)
-        res = False
-        w.exec()
-        if w.getflag() == "canel":
-            res = "canel"
-        else:
-            name = w.lineEdit.gettext().strip()
-            name_res = re.match(r"^.+$", name)
-            if (
-                name_res == None
-                or w.getData("Atlas") == None
-                or w.getData("DynamicModel") == None
-            ):
-                res = False
-            else:
-                res = {
-                    "Project": w.getData("Project"),
-                    "Atlas": w.getData("Atlas"),
-                    "DynamicModel": w.getData("DynamicModel"),
-                    "name": name,
-                }
-        return res
-
-    if type == "DTB":
-        # 新建 DTB 弹窗
-        title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
-        w = EntityCreationDialog(title, "DTB", project=project)
-        res = False
-        w.exec()
-        if w.getflag() == "canel":
-            res = "canel"
-        else:
-            name = w.lineEdit.gettext().strip()
-            name_res = re.match(r"^.+$", name)
-            if (
-                name_res == None
-                or w.getData("Subject") == None
-                or w.getData("DTBModel") == None
-                or w.getData("Connectivity") == None
-            ):
-                res = False
-            else:
-                res = {
-                    "Project": w.getData("Project"),
-                    "Subject": w.getData("Subject"),
-                    "DTBModel": w.getData("DTBModel"),
-                    "Connectivity": w.getData("Connectivity"),
-                    "name": name,
-                }
-        return res
+    title = "Please name your Workspace:"
+    w = WorkspaceInputDialog(title, parent)
+    res = False
+    w.exec()
+    if w.getflag() == "canel":
+        res = "canel"
+    else:
+        name = w.lineEdit.text().strip()
+        if re.match("^[0-9_a-zA-Z]{1,20}$", name):
+            res = name
+    return res

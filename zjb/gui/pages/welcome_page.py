@@ -1,4 +1,3 @@
-import json
 import os
 from threading import Thread
 
@@ -12,9 +11,8 @@ from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config import cfg
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.download_file import DownLoadFile
-from ..common.utils import show_error
 from ..common.zjb_style_sheet import myZJBStyleSheet
-from ..widgets.input_name_dialog import show_dialog
+from ..widgets.input_name_dialog import dialog_workspace
 from ..widgets.titlebar_button import RecentWorkspaceList
 from .base_page import BasePage
 
@@ -67,7 +65,7 @@ class StartPanel(QtWidgets.QWidget):
 
     def _new_workspace(self):
         """新建一个工作空间"""
-        workspace_name = show_dialog("workspace")
+        workspace_name = dialog_workspace(parent=self.window())
         if workspace_name == "canel":
             return
         elif not workspace_name == False:

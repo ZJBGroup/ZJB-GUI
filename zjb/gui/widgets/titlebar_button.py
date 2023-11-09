@@ -15,7 +15,7 @@ from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config_path import get_local_config_path, sync_recent_config
-from ..common.utils import show_error
+from ..common.utils import show_error, show_success
 from .new_entity_menu import NewEntityMenu
 
 
@@ -41,8 +41,9 @@ class OpenButton(TransparentDropDownPushButton):
 
     openWelcomePage = pyqtSignal()
 
-    def __init__(self, name):
+    def __init__(self, name, window=None):
         super().__init__()
+        self._window = window
         self.setText(name)
         self.openMenu = RoundMenu(parent=self)
         self.openMenu.addAction(
@@ -52,7 +53,7 @@ class OpenButton(TransparentDropDownPushButton):
             Action(FluentIcon.FOLDER, "WorkSpace", triggered=self._open_workspace)
         )
         self.openMenu.addSeparator()
-        self.recent_list = RecentWorkspaceList(self, "title")
+        self.recent_list = RecentWorkspaceList(position="title", parent=self._window)
         self.recent_list.recentWorkspaceClick.connect(lambda: self.openMenu.close())
         self.openMenu.addWidget(self.recent_list, selectable=False)
 
@@ -73,6 +74,9 @@ class OpenButton(TransparentDropDownPushButton):
             ]
             get_worker_count = sync_recent_config(workspace_name, workspace_path)
             open_workspace(workspace_path, get_worker_count)
+            show_success(
+                f"Successfully opened workspace {workspace_name}", self.window()
+            )
 
 
 class RecentWorkspaceItem(QListWidgetItem):
@@ -99,8 +103,9 @@ class RecentWorkspaceList(QWidget):
 
     recentWorkspaceClick = pyqtSignal()
 
-    def __init__(self, parent=None, position="welcome"):
+    def __init__(self, position="welcome", parent=None):
         super().__init__(parent=parent)
+        self._parent = parent
         self.listWidget = ListWidget(self)
         self.listWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -134,10 +139,11 @@ class RecentWorkspaceList(QWidget):
         if os.path.exists(w_path):
             get_worker_count = sync_recent_config(w_name, w_path)
             open_workspace(w_path, get_worker_count)
+            show_success(f"Successfully opened workspace {w_name}", self._parent)
         else:
             # 未找到文件
             sync_recent_config(w_name, w_path, state="del")
-            show_error("workspace not find", self.window())
+            show_error("workspace not find", self._parent)
         self._sync_recent_list()
         self.listWidget.clearSelection()
         self.recentWorkspaceClick.emit()

@@ -11,6 +11,7 @@ from .._global import GLOBAL_SIGNAL, open_workspace
 from ..common.config import cfg
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.download_file import DownLoadFile
+from ..common.utils import show_success
 from ..common.zjb_style_sheet import myZJBStyleSheet
 from ..widgets.input_name_dialog import dialog_workspace
 from ..widgets.titlebar_button import RecentWorkspaceList
@@ -20,10 +21,10 @@ from .base_page import BasePage
 class StartPanel(QtWidgets.QWidget):
     """主页开始面板"""
 
-    def __init__(self, text: str, worker_count, parent=None):
+    def __init__(self, text: str, parent=None):
         super().__init__(parent)
+        self._parent = parent
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
-        # self._worker_count = worker_count
         # 左侧 start label
         self.left_panel = QtWidgets.QWidget(self)
         self.left_panel.setMaximumWidth(200)
@@ -77,6 +78,9 @@ class StartPanel(QtWidgets.QWidget):
                 os.mkdir(workspace_path)
                 sync_recent_config(workspace_name, workspace_path)
                 open_workspace(workspace_path)
+                show_success(
+                    f"Successfully opened workspace {workspace_name}", self._parent
+                )
 
     def _open_workspace(self):
         """打开一个工作空间"""
@@ -89,6 +93,9 @@ class StartPanel(QtWidgets.QWidget):
             ]
             get_worker_count = sync_recent_config(workspace_name, workspace_path)
             open_workspace(workspace_path, get_worker_count)
+            show_success(
+                f"Successfully opened workspace {workspace_name}", self._parent
+            )
 
     def _sync_listWidget(self):
         """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
@@ -105,9 +112,8 @@ class StartPanel(QtWidgets.QWidget):
 class RecentPanel(QtWidgets.QWidget):
     """最近打开模块的面板类"""
 
-    def __init__(self, text: str, worker_count, parent=None):
+    def __init__(self, text: str, parent=None):
         super().__init__(parent)
-        # self._worker_count = worker_count
         self.hBoxLayout = QtWidgets.QHBoxLayout(self)
         self.left_panel = QtWidgets.QWidget(self)
         self.left_panel.setMaximumWidth(200)
@@ -117,7 +123,7 @@ class RecentPanel(QtWidgets.QWidget):
         self.labelTitle.setObjectName("labelTitle")
         self.left_panel_layout.addWidget(self.labelTitle)
         myZJBStyleSheet.SETTING_STYLE.apply(self)
-        self.right_panel = RecentWorkspaceList(self, "welcome")
+        self.right_panel = RecentWorkspaceList(position="welcome", parent=parent)
         self.hBoxLayout.addWidget(self.left_panel)
         self.hBoxLayout.addWidget(self.right_panel)
 
@@ -161,9 +167,9 @@ class WelcomePage(BasePage):
         self.bottom_panel_layout = QtWidgets.QHBoxLayout(self.bottom_panel)
         self.bottom_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.bottom_panel_layout.setObjectName("bottom_panel_layout")
-        self.bottom_left_panel_layout = StartPanel("left", worker_count, self)
+        self.bottom_left_panel_layout = StartPanel("left", parent)
         self.bottom_left_panel_layout.setObjectName("bottom_left_panel_layout")
-        self.bottom_right_panel_layout = RecentPanel("right", worker_count, self)
+        self.bottom_right_panel_layout = RecentPanel("right", parent)
         self.bottom_right_panel_layout.setObjectName("bottom_right_panel_layout")
         self.bottom_panel_layout.addStretch(3)
         self.bottom_panel_layout.addWidget(self.bottom_left_panel_layout)

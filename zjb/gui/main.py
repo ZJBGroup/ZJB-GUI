@@ -24,7 +24,6 @@ from qfluentwidgets import (
     TabCloseButtonDisplayMode,
     TransparentPushButton,
 )
-
 from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
 from zjb.gui.pages.base_page import BasePage
@@ -46,7 +45,7 @@ class CustomTitleBar(MSFluentTitleBar):
         super().__init__(parent)
 
         self.newButton = NewButton("New", window=self.window())
-        self.openButton = OpenButton("Open")
+        self.openButton = OpenButton("Open", window=self.window())
         self.openButton.openWelcomePage.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit("Welcome", self._addWelcomePage)
         )
@@ -111,7 +110,7 @@ class WinInterface(ScrollArea):
 
     def _addWelcomePage(self, routeKey: str):
         """新建欢迎页面的回调函数"""
-        welcome_page = WelcomePage(routeKey, "Welcome", FluentIcon.HOME)
+        welcome_page = WelcomePage(routeKey, "Welcome", FluentIcon.HOME, self)
         return welcome_page
 
     def canDrag(self, pos: QPoint):

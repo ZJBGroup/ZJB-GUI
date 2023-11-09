@@ -24,6 +24,7 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentDropDownPushButton,
     TransparentPushButton,
+    MessageBoxBase
 )
 
 from zjb.main.api import (
@@ -279,9 +280,7 @@ class AnalysisPage(BasePage):
                 exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
 
     def _compare_others(self):
-        title = "Compare Data"
-        content = """Choose data to analysis and compare with current results."""
-        w = CompareDialog(title, content, self)
+        w = CompareDialog(self)
         # w.setTitleBarVisible(False)
         if w.exec():
             for project in get_workspace().children:
@@ -309,14 +308,22 @@ class AnalysisPage(BasePage):
                 thisLayout.removeItem(item)
 
 
-class CompareDialog(Dialog):
-    def __init__(self, title: str, content="", parent=None):
-        super().__init__(title, content=content, parent=parent)
-        self.setTitleBarVisible(False)
+class CompareDialog(MessageBoxBase):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
+        self._setup_ui()
+
+    def _setup_ui(self):
+        title = "Compare Data"
+        content = """Choose data to analysis and compare with current results."""
+        self.viewLayout.addWidget(TitleLabel(title))
+        self.viewLayout.addWidget(BodyLabel(content))
         self.combox_data = ComboBox(self)
-        self.combox_data.move(45, 90)
         for project in get_workspace().children:
             for dtb in project.dtbs:
                 for data in dtb.data:
                     self.combox_data.addItem(data)
+        self.viewLayout.addWidget(self.combox_data)
+
+        self.cancelButton.hide()

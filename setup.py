@@ -4,10 +4,9 @@ setuptools.setup(
     name="zjb-gui",
     version="0.2.5",
     install_requires=[
-        "zjb-main>=0.2.5",
+        "zjb-main @ https://github.com/ZJBGroup/ZJB-Main/tarball/main",
         "PyQt-Fluent-Widgets",
         "lmdb",
-        "scikit-learn",
         "qtconsole",
         "requests",
         "QCustomPlot_PyQt5",

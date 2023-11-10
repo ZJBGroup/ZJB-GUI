@@ -1,5 +1,7 @@
 import re
+from typing import Any
 
+from munch import DefaultMunch
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 from qfluentwidgets import (
@@ -13,6 +15,11 @@ from zjb.dos.data import Data
 from zjb.main.api import Project, SpaceCorrelation, Subject
 
 from .._global import get_workspace
+
+
+class JsonObject(object):
+    def __init__(self, d):
+        self.__dict__.update(d)
 
 
 class WorkspaceInputDialog(MessageBoxBase):
@@ -40,7 +47,7 @@ class WorkspaceInputDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.lineEdit)
         self.viewLayout.addWidget(self.tipsLabel)
 
-        # 重写底部按钮
+        # 底部按钮
         self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
         self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
 
@@ -69,7 +76,7 @@ def tree_to_list(Tree):
 class SelectWidget(QWidget):
     """通用下拉选框"""
 
-    selectedDateChanged = pyqtSignal(Data)
+    selectedDateChanged = pyqtSignal(object)
 
     def __init__(self, title: str, dataList=None, parent=None):
         super().__init__(parent)
@@ -131,6 +138,10 @@ class InputWidget(QWidget):
         """获取输入框中的值"""
         return self._inputBox.text()
 
+    def settext(self, str):
+        """往输入框中输入值"""
+        self._inputBox.setText(str)
+
 
 class EntityCreationDialog(MessageBoxBase):
     """创建 Project Subject DTBModel DTB 弹窗选择关联的实体"""
@@ -138,10 +149,14 @@ class EntityCreationDialog(MessageBoxBase):
     def __init__(self, title: str, type="", project: Project = None, parent=None):
         super().__init__(parent=parent)
         self.flag = ""
+        self._type = type
         self.titleLabel = SubtitleLabel(title)
         self.titleLabel.setContentsMargins(0, 0, 0, 20)
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.setSpacing(0)
+
+        # name 输入框
+        self.lineEdit = InputWidget("Name")
 
         # Project 下拉菜单
         project_select_list = tree_to_list(get_workspace())
@@ -186,14 +201,12 @@ class EntityCreationDialog(MessageBoxBase):
         if not default_subject == None:
             self.updateConnectivityList(default_subject)
 
-        # name 输入框
-        self.lineEdit = InputWidget("Name")
-
         # 表单动态联动
         self.project_selector.selectedDateChanged.connect(
             self.updateSubjectAndDTBModelList
         )
         self.subject_selector.selectedDateChanged.connect(self.updateConnectivityList)
+        self.dtbModel_selector.selectedDateChanged.connect(self.updateDTBModelList)
 
         self.viewLayout.addWidget(self.project_selector)
         self.viewLayout.addWidget(self.subject_selector)
@@ -229,13 +242,24 @@ class EntityCreationDialog(MessageBoxBase):
             self.dynamicModel_selector.hide()
             self.connectivity_selector.show()
 
+    def set_name(self):
+        """设置默认的 DTB 名称"""
+        sub_name = self.getData("Subject")
+        model_name = self.getData("DTBModel")
+        if not sub_name == None and not model_name == None:
+            self.lineEdit.settext(
+                _generate_key(
+                    self.getData("Project").dtbs, f"{sub_name.name}-{model_name.name}"
+                )
+            )
+
     def submit_date(self, str):
-        # 标记按钮的点击，关闭窗口
+        """标记按钮的点击，关闭窗口"""
         self.flag = str
         self.close()
 
     def getflag(self):
-        # 获取按钮标记
+        """获取按钮标记"""
         return self.flag
 
     def getData(self, type: str):
@@ -251,7 +275,7 @@ class EntityCreationDialog(MessageBoxBase):
         if type == "DynamicModel":
             return self.dynamicModel_selector.getCurrentValue()
         if type == "Connectivity":
-            return self.connectivity_selector.getCurrentValue()
+            return self.connectivity_selector.getCurrentValue().value
 
     def updateSubjectAndDTBModelList(self, project: Project):
         """选择不同的Project的时候，Subject列表和 DTB model列表会进行改变"""
@@ -261,10 +285,30 @@ class EntityCreationDialog(MessageBoxBase):
     def updateConnectivityList(self, subject: Subject):
         """选择不同的 Subject 的时候，connectivity列表会进行改变"""
         connectivityitems = []
-        for _, value in subject.data.items():
+        for key, value in subject.data.items():
+            _item = DefaultMunch.fromDict({"name": key, "value": value})
             if isinstance(value, SpaceCorrelation):
-                connectivityitems.append(value)
+                connectivityitems.append(_item)
         self.connectivity_selector.updateSelectList(connectivityitems)
+        if self._type == "DTB":
+            self.set_name()
+
+    def updateDTBModelList(self):
+        """选择不同的 DTB Model 的时候，dtb的名称进行变化"""
+        self.set_name()
+
+
+def _generate_key(data: list, prefix: str):
+    "生成默认的DTB名称"
+    pattern = re.compile(rf"{prefix}-(\d+)")
+    _max = 0
+    for item in data:
+        if res := pattern.fullmatch(item.name):
+            value = int(res.groups()[0])
+            if value > _max:
+                _max = value
+    _max += 1
+    return f"{prefix}-{_max}"
 
 
 def dialog_workspace(parent=None):

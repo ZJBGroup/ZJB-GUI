@@ -184,12 +184,13 @@ class MainWindow(FluentWindow):
         self.settingPage = SettingInterface(self)
 
         # 禁用 win11 的 Mica 特效
-        # self.setMicaEffectEnabled(False)
+        self.setMicaEffectEnabled(True)
 
         self.initNavigation()
 
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.requestAddPage.connect(self.addPage)
+        GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
 
     def initWindow(self):
         """初始化窗口"""

@@ -1,4 +1,3 @@
-from matplotlib.pyplot import flag
 from PyQt5.QtCore import QEasingCurve, Qt
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
@@ -27,6 +26,7 @@ class Fileitem(CardWidget):
         self._text = text
         self._data = data
         self.setFixedSize(140, 150)
+
         namestr = self._text
         flag = False
         while len(namestr.encode("utf-8")) > 16:
@@ -55,7 +55,6 @@ class Fileitem(CardWidget):
 
     def _show_context_menu(self, _):
         """右键点击一个条目时，触发右键菜单"""
-        print("000", self._text)
         menu = RoundMenu()
         self.visualization_action = Action(
             FluentIcon.DEVELOPER_TOOLS,

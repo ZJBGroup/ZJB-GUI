@@ -19,6 +19,9 @@ class _GlobalSignal(QObject):
     # dtb列表更新信号
     dtbListUpdate = pyqtSignal([Data, Project], [Data])
 
+    # mica 效果切换信号·
+    micaEnableChanged = pyqtSignal(bool)
+
 
 GLOBAL_SIGNAL = _GlobalSignal()
 

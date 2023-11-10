@@ -7,11 +7,13 @@ from qfluentwidgets import (
     OptionsSettingCard,
     ScrollArea,
     SettingCardGroup,
+    SwitchSettingCard,
     setTheme,
     setThemeColor,
 )
 
-from ..common.config import cfg
+from .._global import GLOBAL_SIGNAL
+from ..common.config import cfg, isWin11
 from ..common.zjb_style_sheet import myZJBStyleSheet
 
 
@@ -28,6 +30,16 @@ class SettingInterface(ScrollArea):
         self.settingLabel = QLabel("Settings", self)
         self.settingLabel.move(60, 63)
         self.personalGroup = SettingCardGroup("Personalization", self.scrollWidget)
+
+        # 云母效果
+        self.micaCard = SwitchSettingCard(
+            FluentIcon.TRANSPARENT,
+            self.tr("Mica effect"),
+            self.tr("Apply semi transparent to windows and surfaces"),
+            cfg.micaEnabled,
+            self.personalGroup,
+        )
+        self.micaCard.setChecked(True)
 
         # 应用主题
         self.themeCard = OptionsSettingCard(
@@ -59,9 +71,11 @@ class SettingInterface(ScrollArea):
         self.__setQss()
         self.__initLayout()
         self.__connectSignalToSlot()
+        self.micaCard.setEnabled(isWin11())
 
     def __initLayout(self):
         """初始化页面布局"""
+        self.personalGroup.addSettingCard(self.micaCard)
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.themeColorCard)
         self.expandLayout.addWidget(self.personalGroup)
@@ -76,6 +90,7 @@ class SettingInterface(ScrollArea):
         """绑定槽函数"""
         cfg.themeChanged.connect(self.__onThemeChanged)
         self.themeColorCard.colorChanged.connect(setThemeColor)
+        self.micaCard.checkedChanged.connect(GLOBAL_SIGNAL.micaEnableChanged)
 
     def __onThemeChanged(self, theme):
         """主题修改槽函数"""

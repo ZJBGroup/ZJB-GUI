@@ -1,7 +1,5 @@
 import re
-from typing import Any
 
-from munch import DefaultMunch
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 from qfluentwidgets import (
@@ -11,7 +9,6 @@ from qfluentwidgets import (
     MessageBoxBase,
     SubtitleLabel,
 )
-from zjb.dos.data import Data
 from zjb.main.api import Project, SpaceCorrelation, Subject
 
 from .._global import get_workspace
@@ -106,8 +103,8 @@ class SelectWidget(QWidget):
         """更新所有选项"""
         self._comboBox.clear()
         for item in datelist:
-            if isinstance(item, SpaceCorrelation):
-                self._comboBox.addItem(str(item), userData=item)
+            if isinstance(item, dict):
+                self._comboBox.addItem(item["name"], userData=item["value"])
             else:
                 self._comboBox.addItem(item.name, userData=item)
         if len(datelist) > 0:
@@ -242,16 +239,20 @@ class EntityCreationDialog(MessageBoxBase):
             self.dynamicModel_selector.hide()
             self.connectivity_selector.show()
 
-    def set_name(self):
+    def set_name(self, flag=True):
         """设置默认的 DTB 名称"""
-        sub_name = self.getData("Subject")
-        model_name = self.getData("DTBModel")
-        if not sub_name == None and not model_name == None:
-            self.lineEdit.settext(
-                _generate_key(
-                    self.getData("Project").dtbs, f"{sub_name.name}-{model_name.name}"
+        if flag:
+            sub_name = self.getData("Subject")
+            model_name = self.getData("DTBModel")
+            if not sub_name == None and not model_name == None:
+                self.lineEdit.settext(
+                    _generate_key(
+                        self.getData("Project").dtbs,
+                        f"{sub_name.name}-{model_name.name}",
+                    )
                 )
-            )
+        else:
+            self.lineEdit.settext("")
 
     def submit_date(self, str):
         """标记按钮的点击，关闭窗口"""
@@ -275,18 +276,20 @@ class EntityCreationDialog(MessageBoxBase):
         if type == "DynamicModel":
             return self.dynamicModel_selector.getCurrentValue()
         if type == "Connectivity":
-            return self.connectivity_selector.getCurrentValue().value
+            return self.connectivity_selector.getCurrentValue()
 
     def updateSubjectAndDTBModelList(self, project: Project):
         """选择不同的Project的时候，Subject列表和 DTB model列表会进行改变"""
         self.dtbModel_selector.updateSelectList(project.available_models())
         self.subject_selector.updateSelectList(project.available_subjects())
+        if not self._type == "DTB":
+            self.set_name(False)
 
     def updateConnectivityList(self, subject: Subject):
         """选择不同的 Subject 的时候，connectivity列表会进行改变"""
         connectivityitems = []
         for key, value in subject.data.items():
-            _item = DefaultMunch.fromDict({"name": key, "value": value})
+            _item = {"name": key, "value": value}
             if isinstance(value, SpaceCorrelation):
                 connectivityitems.append(_item)
         self.connectivity_selector.updateSelectList(connectivityitems)
@@ -299,7 +302,7 @@ class EntityCreationDialog(MessageBoxBase):
 
 
 def _generate_key(data: list, prefix: str):
-    "生成默认的DTB名称"
+    """生成默认的DTB名称"""
     pattern = re.compile(rf"{prefix}-(\d+)")
     _max = 0
     for item in data:

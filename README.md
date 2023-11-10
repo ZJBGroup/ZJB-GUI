@@ -6,9 +6,13 @@
 在已有的Python环境中使用pip安装(建议使用Python3.10及以上版本):
 
 ```
-pip install https://github.com/ZJBGroup/ZJB-Framework/archive/refs/heads/main.zip
-pip install https://github.com/ZJBGroup/ZJB-Main/archive/refs/heads/main.zip
-pip install https://github.com/ZJBGroup/ZJB-GUI/archive/refs/heads/main.zip
+pip install https://github.com/ZJBGroup/ZJB-GUI/tarball/main
+```
+
+## 更新
+
+```
+pip install --no-cache-dir https://github.com/ZJBGroup/ZJB-GUI/tarball/main
 ```
 
 ## 运行

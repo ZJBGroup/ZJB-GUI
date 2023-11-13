@@ -10,7 +10,12 @@ from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 from .._global import GLOBAL_SIGNAL, get_workspace, open_workspace
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
-from .input_name_dialog import EntityCreationDialog, dialog_workspace
+from .input_name_dialog import (
+    DTBCreationDialog,
+    DTBModelCreationDialog,
+    EntityCreationBase,
+    dialog_workspace,
+)
 
 
 class NewEntityMenu(RoundMenu):
@@ -97,7 +102,7 @@ class NewEntityMenu(RoundMenu):
     def _new_project(self):
         """点击 Project 按钮， 新建 Project"""
         title = "Choose a parent Project \nAnd name your Project:"
-        w = EntityCreationDialog(title, "Project", self._item, self._window)
+        w = EntityCreationBase(title, "Project", self._item, self._window)
         getdata = False
         w.exec()
         if w.getflag() == "canel":
@@ -123,7 +128,7 @@ class NewEntityMenu(RoundMenu):
     def _new_subject(self):
         """点击 Subject 按钮，新建 Subject"""
         title = "Choose a parent Project \nAnd name your Subject:"
-        w = EntityCreationDialog(title, "Subject", self._item, self._window)
+        w = EntityCreationBase(title, "Subject", self._item, self._window)
         getdata = False
         w.exec()
         if w.getflag() == "canel":
@@ -149,7 +154,7 @@ class NewEntityMenu(RoundMenu):
     def _new_dtb_model(self):
         """点击 DTBModel 按钮，新建 DTBModel"""
         title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
-        w = EntityCreationDialog(title, "DTBModel", self._item, self._window)
+        w = DTBModelCreationDialog(title, "DTBModel", self._item, self._window)
         getdata = False
         w.exec()
         if w.getflag() == "canel":
@@ -193,7 +198,7 @@ class NewEntityMenu(RoundMenu):
     def _new_dtb(self):
         """点击 DTB 按钮，新建 DTB"""
         title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
-        w = EntityCreationDialog(title, "DTB", self._item, self._window)
+        w = DTBCreationDialog(title, "DTB", self._item, self._window)
         getdata = False
         w.exec()
         if w.getflag() == "canel":

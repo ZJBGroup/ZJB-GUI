@@ -14,11 +14,6 @@ from zjb.main.api import Project, SpaceCorrelation, Subject
 from .._global import get_workspace
 
 
-class JsonObject(object):
-    def __init__(self, d):
-        self.__dict__.update(d)
-
-
 class WorkspaceInputDialog(MessageBoxBase):
     """输入工作空间名称的弹窗类"""
 
@@ -54,20 +49,6 @@ class WorkspaceInputDialog(MessageBoxBase):
 
     def getflag(self):
         return self.flag
-
-
-def tree_to_list(Tree):
-    """树结构转列表结构"""
-    list = []
-    line = []
-    line.append(Tree)
-    while len(line) > 0:
-        _node = line.pop(0)
-        list.append(_node)
-        if len(_node.children) > 0:
-            for item in _node.children:
-                line.append(item)
-    return list
 
 
 class SelectWidget(QWidget):
@@ -140,13 +121,14 @@ class InputWidget(QWidget):
         self._inputBox.setText(str)
 
 
-class EntityCreationDialog(MessageBoxBase):
-    """创建 Project Subject DTBModel DTB 弹窗选择关联的实体"""
+class EntityCreationBase(MessageBoxBase):
+    """新建 Project 和新建 Subject 的弹窗"""
 
     def __init__(self, title: str, type="", project: Project = None, parent=None):
         super().__init__(parent=parent)
         self.flag = ""
         self._type = type
+        self._project = project
         self.titleLabel = SubtitleLabel(title)
         self.titleLabel.setContentsMargins(0, 0, 0, 20)
         self.viewLayout.addWidget(self.titleLabel)
@@ -161,13 +143,33 @@ class EntityCreationDialog(MessageBoxBase):
         if not project == None:
             self.project_selector.setValue(project)
 
-        # subject 下拉菜单
-        subject_select_list = []
-        if project == None:
-            subject_select_list = get_workspace().available_subjects()
-        else:
-            subject_select_list = project.available_subjects()
-        self.subject_selector = SelectWidget("Subject", dataList=subject_select_list)
+        self.viewLayout.addWidget(self.lineEdit)
+        self.viewLayout.addWidget(self.project_selector)
+
+    def getData(self, type: str):
+        """外部控件根据类型获取用户输入的信息"""
+        if type == "Project":
+            return self.project_selector.getCurrentValue()
+
+        # 重写底部按钮
+        self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
+        self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
+
+    def submit_date(self, str):
+        """标记按钮的点击，关闭窗口"""
+        self.flag = str
+        self.close()
+
+    def getflag(self):
+        """获取按钮标记"""
+        return self.flag
+
+
+class DTBModelCreationDialog(EntityCreationBase):
+    """新建 DTB Model 的弹窗"""
+
+    def __init__(self, title: str, type="", project: Project = None, parent=None):
+        super().__init__(title=title, type=type, project=project, parent=parent)
 
         # Atlas 下拉菜单
         atlas_select_list = get_workspace().atlases
@@ -178,6 +180,33 @@ class EntityCreationDialog(MessageBoxBase):
         self.dynamicModel_selector = SelectWidget(
             "Dynamic Model", dataList=dynamics_select_list
         )
+
+        self.viewLayout.addWidget(self.atlas_selector)
+        self.viewLayout.addWidget(self.dynamicModel_selector)
+
+    def getData(self, type: str):
+        """外部控件根据类型获取用户输入的信息"""
+        if type == "Project":
+            return self.project_selector.getCurrentValue()
+        if type == "Atlas":
+            return self.atlas_selector.getCurrentValue()
+        if type == "DynamicModel":
+            return self.dynamicModel_selector.getCurrentValue()
+
+
+class DTBCreationDialog(EntityCreationBase):
+    """新建 DTB 的弹窗"""
+
+    def __init__(self, title: str, type="", project: Project = None, parent=None):
+        super().__init__(title=title, type=type, project=project, parent=parent)
+
+        # subject 下拉菜单
+        subject_select_list = []
+        if project == None:
+            subject_select_list = get_workspace().available_subjects()
+        else:
+            subject_select_list = project.available_subjects()
+        self.subject_selector = SelectWidget("Subject", dataList=subject_select_list)
 
         # DTBModel 下拉菜单
         dtb_model_select_list = []
@@ -198,6 +227,10 @@ class EntityCreationDialog(MessageBoxBase):
         if not default_subject == None:
             self.updateConnectivityList(default_subject)
 
+        self.viewLayout.addWidget(self.subject_selector)
+        self.viewLayout.addWidget(self.dtbModel_selector)
+        self.viewLayout.addWidget(self.connectivity_selector)
+
         # 表单动态联动
         self.project_selector.selectedDateChanged.connect(
             self.updateSubjectAndDTBModelList
@@ -205,76 +238,14 @@ class EntityCreationDialog(MessageBoxBase):
         self.subject_selector.selectedDateChanged.connect(self.updateConnectivityList)
         self.dtbModel_selector.selectedDateChanged.connect(self.updateDTBModelList)
 
-        self.viewLayout.addWidget(self.project_selector)
-        self.viewLayout.addWidget(self.subject_selector)
-        self.viewLayout.addWidget(self.atlas_selector)
-        self.viewLayout.addWidget(self.dynamicModel_selector)
-        self.viewLayout.addWidget(self.dtbModel_selector)
-        self.viewLayout.addWidget(self.connectivity_selector)
-        self.viewLayout.addWidget(self.lineEdit)
-
-        # 重写底部按钮
-        self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
-        self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
-        # 不同窗口控制不同控件的显隐
-        if type == "Project" or type == "Subject":
-            self.project_selector.show()
-            self.subject_selector.hide()
-            self.atlas_selector.hide()
-            self.dtbModel_selector.hide()
-            self.dynamicModel_selector.hide()
-            self.connectivity_selector.hide()
-        if type == "DTBModel":
-            self.project_selector.show()
-            self.subject_selector.hide()
-            self.atlas_selector.show()
-            self.dtbModel_selector.hide()
-            self.dynamicModel_selector.show()
-            self.connectivity_selector.hide()
-        if type == "DTB":
-            self.project_selector.show()
-            self.subject_selector.show()
-            self.atlas_selector.hide()
-            self.dtbModel_selector.show()
-            self.dynamicModel_selector.hide()
-            self.connectivity_selector.show()
-
-    def set_name(self, flag=True):
-        """设置默认的 DTB 名称"""
-        if flag:
-            sub_name = self.getData("Subject")
-            model_name = self.getData("DTBModel")
-            if not sub_name == None and not model_name == None:
-                self.lineEdit.settext(
-                    _generate_key(
-                        self.getData("Project").dtbs,
-                        f"{sub_name.name}-{model_name.name}",
-                    )
-                )
-        else:
-            self.lineEdit.settext("")
-
-    def submit_date(self, str):
-        """标记按钮的点击，关闭窗口"""
-        self.flag = str
-        self.close()
-
-    def getflag(self):
-        """获取按钮标记"""
-        return self.flag
-
     def getData(self, type: str):
         """外部控件根据类型获取用户输入的信息"""
         if type == "Project":
             return self.project_selector.getCurrentValue()
         if type == "Subject":
             return self.subject_selector.getCurrentValue()
-        if type == "Atlas":
-            return self.atlas_selector.getCurrentValue()
         if type == "DTBModel":
             return self.dtbModel_selector.getCurrentValue()
-        if type == "DynamicModel":
-            return self.dynamicModel_selector.getCurrentValue()
         if type == "Connectivity":
             return self.connectivity_selector.getCurrentValue()
 
@@ -300,9 +271,44 @@ class EntityCreationDialog(MessageBoxBase):
         """选择不同的 DTB Model 的时候，dtb的名称进行变化"""
         self.set_name()
 
+    def set_name(self, flag=True):
+        """设置默认的 DTB 名称"""
+        if flag:
+            sub_name = self.getData("Subject")
+            model_name = self.getData("DTBModel")
+            if not sub_name == None and not model_name == None:
+                self.lineEdit.settext(
+                    _generate_key(
+                        self.getData("Project").dtbs,
+                        f"{sub_name.name}-{model_name.name}",
+                    )
+                )
+        else:
+            self.lineEdit.settext("")
+
+
+def tree_to_list(Tree):
+    """树结构转列表结构"""
+    list = []
+    line = []
+    line.append(Tree)
+    while len(line) > 0:
+        _node = line.pop(0)
+        list.append(_node)
+        if len(_node.children) > 0:
+            for item in _node.children:
+                line.append(item)
+    return list
+
 
 def _generate_key(data: list, prefix: str):
-    """生成默认的DTB名称"""
+    """生成默认的DTB名称
+
+    Parameters
+    ----------
+    prefix : str
+        除了 index 之外的名称字符串
+    """
     pattern = re.compile(rf"{prefix}-(\d+)")
     _max = 0
     for item in data:

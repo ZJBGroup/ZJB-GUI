@@ -153,7 +153,7 @@ class AnalysisPage(BasePage):
                     break
 
         cb_analysis.currentIndexChanged.connect(
-            lambda: _on_cb_analysis_changed(analysis_input)
+            lambda: _on_cb_analysis_changed(analysis_data)
         )
 
         if compare:
@@ -213,8 +213,8 @@ _parameter  = self._{parameter_name}
 if isinstance(_parameter, parameter_type):
     args.append(_parameter)
 
-elif isinstance(_parameter.data, parameter_type):
-    args.append(_parameter.data)
+elif isinstance(_parameter.data[0], parameter_type):
+    args.append(_parameter.data[0])
                     """
                     )
 
@@ -343,13 +343,24 @@ elif isinstance(_parameter.data, parameter_type):
             vBoxLayout_result.addWidget(btn_save)
             vBoxLayout_2.addLayout(vBoxLayout_result)
 
-        def _on_cb_analysis_changed(analysis_input):
+        def _on_cb_analysis_changed(analysis_data):
             self._delete_all_in_layout(mplWidget.vertical_layout)
             self._delete_all_in_layout(form_layout)
             self._delete_all_in_layout(vBoxLayout_result)
 
             analysis_func = eval("zjb_analysis." + cb_analysis.text())
             signature_func = inspect.signature(analysis_func)
+            #
+            # for parameter in signature_func.parameters.values():
+            #     parameter_name = parameter.name
+            #     parameter_type = parameter.annotation
+            #     if isinstance(analysis_data, parameter_type):
+            #         analysis_input = analysis_data
+            #
+            #     elif isinstance(analysis_data.data, parameter_type):
+            #         cb_analysis.addItem(func_name)
+            #         analysis_input = analysis_data.data
+
             for parameter in signature_func.parameters.values():
                 parameter_name = parameter.name
                 parameter_type = parameter.annotation
@@ -364,6 +375,12 @@ elif isinstance(_parameter.data, parameter_type):
 self.{parameter_name}_btn = TransparentPushButton('Load')
 self.{parameter_name}_btn.clicked.connect(partial(self._load_conjoint, '{parameter_name}'))
 self.{parameter_name}_edit.setText('self.{parameter_name}')   
+if isinstance(analysis_data, parameter_type):
+    analysis_input = analysis_data
+
+elif isinstance(analysis_data.data, parameter_type):
+    cb_analysis.addItem(analysis_func)
+    analysis_input = analysis_data.data
 self._{parameter_name} = analysis_input    
 self.{parameter_name}_edit.setEnabled(False)            
 form_layout.addRow(label, self.{parameter_name}_edit)

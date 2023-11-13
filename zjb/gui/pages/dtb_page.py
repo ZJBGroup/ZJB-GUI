@@ -17,7 +17,7 @@ from qfluentwidgets import (
 )
 
 from zjb.doj.job import GeneratorJob, Job, JobState
-from zjb.main.api import DTB, PSEResult, SimulationResult
+from zjb.main.api import DTB, PSEResult, SimulationResult, Project
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace

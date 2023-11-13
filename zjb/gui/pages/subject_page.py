@@ -63,9 +63,9 @@ class SubjectPage(BasePage):
         self.btn_import_connectivity.clicked.connect(self._import_connectivity)
         self.vBoxLayout.addWidget(self.btn_import_connectivity)
 
-        for name, data in self.subject.data.items():
-            data_manipulation_panel = DataOperationPanel(name, data, self.project)
-            self.formLayout.addRow(data_manipulation_panel)
+        # for name, data in self.subject.data.items():
+        #     data_manipulation_panel = DataOperationPanel(name, data, self.project)
+        #     self.formLayout.addRow(data_manipulation_panel)
         self.detail_panel_layout.addWidget(self.button_group)
         self.info_panel_layout.addWidget(self.detail_panel)
         self.vBoxLayout.addWidget(self.info_panel)

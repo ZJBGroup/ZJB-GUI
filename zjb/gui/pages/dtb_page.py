@@ -1,4 +1,3 @@
-import re
 from functools import partial
 from typing import Any
 
@@ -34,9 +33,10 @@ from .subject_page import SubjectPage
 
 
 class DTBPage(BasePage):
-    def __init__(self, dtb: DTB):
+    def __init__(self, dtb: DTB, project: Project):
         super().__init__(dtb._gid.str, dtb.name, FluentIcon.ALBUM)
         self.dtb = dtb
+        self.project = project
 
         self._setup_ui()
 
@@ -102,7 +102,7 @@ class DTBPage(BasePage):
             elif data is None:
                 self.scrollLayout.addRow(TransparentPushButton(f"{name}(running)"))
             else:
-                data_manipulation_panel = DataOperationPanel(name, data)
+                data_manipulation_panel = DataOperationPanel(name, data, self.project)
                 self.scrollLayout.addRow(data_manipulation_panel)
 
     def _poll(self):
@@ -181,7 +181,7 @@ class DTBPage(BasePage):
     def _show_data_dialog(self, name, data):
         title = f"Data in {name}"
         content = """Select data for visualization or analysis."""
-        w = ChooseDataDialog(data, self)
+        w = ChooseDataDialog(data, self.project, self)
         w.exec()
 
 

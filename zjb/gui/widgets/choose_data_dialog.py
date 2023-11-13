@@ -22,9 +22,10 @@ from ..panels.data_operation_panel import DataOperationPanel
 class ChooseDataDialog(MessageBoxBase):
     """仿真结果、分析结果等包含多条数据的数据平铺、选择"""
 
-    def __init__(self, data=None, parent=None):
+    def __init__(self, data, project, parent=None):
         super().__init__(parent)
         self.data = data
+        self.project = project
         self._setup_ui()
 
     def _setup_ui(self):
@@ -59,7 +60,9 @@ class ChooseDataDialog(MessageBoxBase):
 
         if isinstance(self.data, SimulationResult):
             for data in self.data.data:
-                data_manipulation_panel = DataOperationPanel(data._gid.str, data)
+                data_manipulation_panel = DataOperationPanel(
+                    data._gid.str, data, self.project
+                )
                 self.scrollLayout.addRow(data_manipulation_panel)
         elif isinstance(self.data, PSEResult):
             for data in self.data.data:
@@ -70,5 +73,5 @@ class ChooseDataDialog(MessageBoxBase):
     def _show_data_dialog(self, name, data):
         title = f"Data in {name}"
         content = """Select data for visualization or analysis."""
-        w = ChooseDataDialog(data, self)
+        w = ChooseDataDialog(data, self.project, self)
         w.exec()

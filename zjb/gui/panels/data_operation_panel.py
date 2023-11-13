@@ -1,7 +1,21 @@
-from PyQt5.QtWidgets import QHBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, PrimaryPushButton, TransparentPushButton
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel,
+    MessageBoxBase,
+    PrimaryPushButton,
+    SmoothScrollArea,
+    TitleLabel,
+    TransparentPushButton,
+)
 
-from zjb.main.api import Connectivity, RegionalTimeSeries, SimulationResult, Surface
+from zjb.main.api import (
+    AnalysisResult,
+    Connectivity,
+    RegionalTimeSeries,
+    SimulationResult,
+    Surface,
+)
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..pages.analysis_page import AnalysisPage
@@ -11,11 +25,13 @@ from ..pages.time_series_page import RegionalTimeSeriesPage
 
 
 class DataOperationPanel(QWidget):
-    def __init__(self, name, data, subject=None, parent=None):
+    def __init__(self, name, data, project, subject=None, parent=None):
         super().__init__(parent=parent)
         self.setObjectName("DataManipulation")
         self.name = name
         self.data = data
+        self.project = project
+
         self._workspace = get_workspace()
         self._default_subject(subject)
 
@@ -71,29 +87,86 @@ class DataOperationPanel(QWidget):
             )
 
     def _click_analysis(self):
+        dialog = ChooseAnalysisDialog(
+            self.data, self.project, self.parent().parent().parent().parent().parent()
+        )
+        dialog.exec()
+
+
+class ChooseAnalysisDialog(MessageBoxBase):
+    def __init__(self, data, project, parent=None):
+        super().__init__(parent)
+        self.data = data
+        self.project = project
+        self._setup_ui()
+
+    def _setup_ui(self):
+        self.yesButton.setText("Close")
+        self.cancelButton.hide()
+        self.formLayout = QFormLayout()
+        self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        self.formLayout.addRow(TitleLabel("Existing Analysis:"))
+
+        self.scrollArea = SmoothScrollArea(self)
+
+        self.formLayout.addRow(self.scrollArea)
+        self.scrollArea.setWidgetResizable(True)
+
+        self.scrollWidget = QWidget(self.scrollArea)
+
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.scrollLayout = QFormLayout(self.scrollWidget)
+        self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        for data in self.project.data:
+            if self.data in data.origin:
+                btn_existe = self._create_data_button(data._gid.str, data)
+                self.scrollLayout.addRow(btn_existe)
+
+        btn_add_new_analysis = TransparentPushButton("New Analysis")
+        btn_add_new_analysis.clicked.connect(self._click_new_analysis)
+
+        self.formLayout.addRow(btn_add_new_analysis)
+
+        self.viewLayout.addLayout(self.formLayout)
+
+    def _create_data_button(self, name, data):
+        btn_data = TransparentPushButton(f"{name}")
+        btn_data.clicked.connect(lambda: self._show_exist_analysis(name, data))
+        return btn_data
+
+    def _click_new_analysis(self):
         if isinstance(self.data, SimulationResult):
             timeseries = self.data.data[0]
             self._workspace = get_workspace()
 
             GLOBAL_SIGNAL.requestAddPage.emit(
                 timeseries._gid.str + "Analysis",
-                lambda _: AnalysisPage(timeseries),
+                lambda _: AnalysisPage(timeseries, self.project),
             )
 
         elif isinstance(self.data, Surface):
             GLOBAL_SIGNAL.requestAddPage.emit(
                 self.data._gid.str + "Analysis",
-                lambda _: AnalysisPage(self.data),
+                lambda _: AnalysisPage(self.data, self.project),
             )
 
         elif isinstance(self.data, Connectivity):
             GLOBAL_SIGNAL.requestAddPage.emit(
                 self.data._gid.str + "Analysis",
-                lambda _: AnalysisPage(self.data),
+                lambda _: AnalysisPage(self.data, self.project),
             )
 
         elif isinstance(self.data, RegionalTimeSeries):
             GLOBAL_SIGNAL.requestAddPage.emit(
                 self.data._gid.str + "Analysis",
-                lambda _: AnalysisPage(self.data),
+                lambda _: AnalysisPage(self.data, self.project),
+            )
+
+    def _show_exist_analysis(self, name, data):
+        if isinstance(data, AnalysisResult):
+            GLOBAL_SIGNAL.requestAddPage.emit(
+                data._gid.str + "Analysis",
+                lambda _: AnalysisPage(data, self.project),
             )

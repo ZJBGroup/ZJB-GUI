@@ -114,12 +114,12 @@ class DTBInterface(ScrollArea):
         """左键点击一个条目"""
         if isinstance(item, SubjectItem):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                item.subject._gid.str, lambda _: SubjectPage(item.subject)
+                item.subject._gid.str, lambda _: SubjectPage(item.subject, item.parent().project)
             )
             return
         if isinstance(item, DTBItem):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                item.dtb._gid.str, lambda _: DTBPage(item.dtb)
+                item.dtb._gid.str, lambda _: DTBPage(item.dtb, item.parent().project)
             )
             return
         if isinstance(item, DTBModelItem):

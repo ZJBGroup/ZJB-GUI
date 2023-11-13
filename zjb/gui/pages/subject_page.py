@@ -11,7 +11,8 @@ from qfluentwidgets import (
     SubtitleLabel,
     TitleLabel,
 )
-from zjb.main.api import RegionalConnectivity, RegionSpace, Subject
+
+from zjb.main.api import RegionalConnectivity, RegionSpace, Subject, Project
 
 from .._global import get_workspace
 from ..common.utils import show_error
@@ -22,9 +23,11 @@ from .base_page import BasePage
 
 
 class SubjectPage(BasePage):
-    def __init__(self, subject: Subject):
+    def __init__(self, subject: Subject, project: Project):
         super().__init__(subject._gid.str, subject.name, FluentIcon.PEOPLE)
         self.subject = subject
+        self.project = project
+
         self._workspace = get_workspace()
         self._setup_ui()
 
@@ -58,8 +61,11 @@ class SubjectPage(BasePage):
         self.button_group_layout.setContentsMargins(0, 25, 0, 0)
         self.btn_import_connectivity = PrimaryPushButton("Import Connectivity")
         self.btn_import_connectivity.clicked.connect(self._import_connectivity)
-        self.button_group_layout.addWidget(self.btn_import_connectivity)
+        self.vBoxLayout.addWidget(self.btn_import_connectivity)
 
+        for name, data in self.subject.data.items():
+            data_manipulation_panel = DataOperationPanel(name, data, self.project)
+            self.formLayout.addRow(data_manipulation_panel)
         self.detail_panel_layout.addWidget(self.button_group)
         self.info_panel_layout.addWidget(self.detail_panel)
         self.vBoxLayout.addWidget(self.info_panel)

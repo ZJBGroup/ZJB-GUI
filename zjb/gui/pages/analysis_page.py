@@ -1,4 +1,5 @@
 import inspect
+from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,6 +29,7 @@ from qfluentwidgets import (
 )
 
 from zjb.main.api import (
+    AnalysisResult,
     RegionalConnectivity,
     RegionalTimeSeries,
     SpaceSeries,
@@ -45,9 +47,10 @@ from .time_series_page import RegionalTimeSeriesPage
 
 
 class AnalysisPage(BasePage):
-    def __init__(self, data):
+    def __init__(self, data, project):
         super().__init__(data._gid.str + "Analysis", "Analysis", FluentIcon.DOCUMENT)
         self.data = data
+        self.project = project
 
         self._setup_ui()
 
@@ -73,6 +76,10 @@ class AnalysisPage(BasePage):
         btn_compare.clicked.connect(self._compare_others)
         self.hBoxLayout.addWidget(btn_compare)
 
+        # btn_conjoint = PrimaryPushButton(f"Analysis with others")
+        # btn_conjoint.clicked.connect(self._analysis_with_others)
+        # self.hBoxLayout.addWidget(btn_conjoint)
+
         self.hBoxLayout.addStretch()
 
         self.vBoxLayout.addLayout(self.hBoxLayout)
@@ -86,7 +93,9 @@ class AnalysisPage(BasePage):
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         for trait_name in list(self.data.trait_get().keys()):
-            btn_trait = self._create_data_button(trait_name)
+            btn_trait = self._create_data_button(
+                trait_name, self.data.trait_get()[trait_name]
+            )
             self.scrollLayout.addRow(BodyLabel(trait_name + ": "), btn_trait)
 
         self.scrollLayout.addItem(self.spacerItem)
@@ -134,18 +143,27 @@ class AnalysisPage(BasePage):
             for parameter in signature.parameters.values():
                 parameter_name = parameter.name
                 parameter_type = parameter.annotation
-                if parameter_type == TimeSeries:
+                if isinstance(analysis_data, parameter_type):
                     cb_analysis.addItem(func_name)
+                    analysis_input = analysis_data
+                    break
+                elif isinstance(analysis_data.data, parameter_type):
+                    cb_analysis.addItem(func_name)
+                    analysis_input = analysis_data.data
                     break
 
-        cb_analysis.currentIndexChanged.connect(lambda: _on_cb_analysis_changed())
+        cb_analysis.currentIndexChanged.connect(
+            lambda: _on_cb_analysis_changed(analysis_input)
+        )
 
         if compare:
             scrollLayout = QFormLayout()
             scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
             for trait_name in list(analysis_data.trait_get().keys()):
-                btn_trait = self._create_data_button(trait_name)
+                btn_trait = self._create_data_button(
+                    trait_name, analysis_data.trait_get()[trait_name]
+                )
                 scrollLayout.addRow(BodyLabel(trait_name + ": "), btn_trait)
             vBoxLayout_2.addLayout(scrollLayout)
 
@@ -161,7 +179,6 @@ class AnalysisPage(BasePage):
         self.scrollLayout.addItem(self.spacerItem)
 
         vBoxLayout_result = QVBoxLayout()
-        vBoxLayout_2.addLayout(vBoxLayout_result)
 
         mplWidget = MplWidget()
 
@@ -172,17 +189,35 @@ class AnalysisPage(BasePage):
             analysis_func = eval("zjb_analysis." + cb_analysis.text())
 
             args = []
-            args.append(analysis_data)
+            # args.append(analysis_input)
+            print(analysis_input)
             signature_func = inspect.signature(analysis_func)
             for parameter in signature_func.parameters.values():
                 parameter_name = parameter.name
                 parameter_type = parameter.annotation
-                if parameter_type == float:
-                    exec(f"args.append(float(self.{parameter_name}_edit.text()))")
-                elif parameter_type == str:
-                    exec(f"args.append(self.{parameter_name}_edit.text())")
-                elif parameter_type == int:
-                    exec(f"args.append(int(self.{parameter_name}_edit.text()))")
+                if parameter.default is not inspect._empty:
+                    exec(
+                        f"args.append(parameter_type(self.{parameter_name}_edit.text()))"
+                    )
+                    # if parameter_type == float:
+                    #     exec(f"args.append(float(self.{parameter_name}_edit.text()))")
+                    # elif parameter_type == str:
+                    #     exec(f"args.append(self.{parameter_name}_edit.text())")
+                    # elif parameter_type == int:
+                    #     exec(f"args.append(int(self.{parameter_name}_edit.text()))")
+                else:
+                    # exec(f"args.append(parameter_type(self.{parameter_name}_edit.text()))")
+                    exec(
+                        f"""
+_parameter  = self._{parameter_name}
+if isinstance(_parameter, parameter_type):
+    args.append(_parameter)
+
+elif isinstance(_parameter.data, parameter_type):
+    args.append(_parameter.data)
+                    """
+                    )
+
             args = tuple(args)
             result = analysis_func(*args)
             if result.ndim == 2:
@@ -196,7 +231,10 @@ class AnalysisPage(BasePage):
                     mplWidget.vertical_layout.addWidget(canvas)
                     vBoxLayout_2.addWidget(mplWidget)
 
-                    if nrow == self.data.space.atlas.number_of_regions:
+                    if (
+                        hasattr(self.data, "space")
+                        and nrow == self.data.space.atlas.number_of_regions
+                    ):
                         analysis_result = RegionalConnectivity(
                             space=self.data.space,
                             data=result,
@@ -211,8 +249,25 @@ class AnalysisPage(BasePage):
                             )
 
                         mplWidget.vertical_layout.addWidget(btn_show)
-                        btn_save = TransparentPushButton("Save analysis result")
-                        mplWidget.vertical_layout.addWidget(btn_save)
+
+                    elif (
+                        hasattr(self.data.origin[0], "space")
+                        and nrow == self.data.origin[0].space.atlas.number_of_regions
+                    ):
+                        analysis_result = RegionalConnectivity(
+                            space=self.data.origin[0].space,
+                            data=result,
+                        )
+                        btn_show = TransparentPushButton("Advanced Visualization")
+                        btn_show.clicked.connect(lambda: _add_advanced_vispage())
+
+                        def _add_advanced_vispage():
+                            GLOBAL_SIGNAL.requestAddPage.emit(
+                                analysis_result._gid.str,
+                                lambda _: ConnectivityPage(analysis_result),
+                            )
+
+                        mplWidget.vertical_layout.addWidget(btn_show)
 
                 else:
                     fig = plt.figure()
@@ -252,7 +307,43 @@ class AnalysisPage(BasePage):
 
                 vBoxLayout_result.addWidget(btn_result)
 
-        def _on_cb_analysis_changed():
+            analysis_parameters = {}
+            analysis_parameters["Analysis Method"] = cb_analysis.text()
+
+            for parameter in signature_func.parameters.values():
+                parameter_name = parameter.name
+                parameter_type = parameter.annotation
+                if parameter_type == float:
+                    exec(
+                        f"analysis_parameters[parameter_name] = float(self.{parameter_name}_edit.text())"
+                    )
+                elif parameter_type == str:
+                    exec(
+                        f"analysis_parameters[parameter_name] = self.{parameter_name}_edit.text()"
+                    )
+                elif parameter_type == int:
+                    exec(
+                        f"analysis_parameters[parameter_name] = int(self.{parameter_name}_edit.text())"
+                    )
+                else:
+                    exec(
+                        f"analysis_parameters[parameter_name] = str(self.{parameter_name}_edit.text())"
+                    )
+
+            analysises = AnalysisResult(
+                origin=[
+                    self.data,
+                ],
+                data=result,
+                parameters=analysis_parameters,
+            )
+
+            btn_save = TransparentPushButton("Save analysis result")
+            btn_save.clicked.connect(lambda: self._save_analysises(analysises))
+            vBoxLayout_result.addWidget(btn_save)
+            vBoxLayout_2.addLayout(vBoxLayout_result)
+
+        def _on_cb_analysis_changed(analysis_input):
             self._delete_all_in_layout(mplWidget.vertical_layout)
             self._delete_all_in_layout(form_layout)
             self._delete_all_in_layout(vBoxLayout_result)
@@ -266,29 +357,62 @@ class AnalysisPage(BasePage):
                 exec(f"self.{parameter_name}_edit = LineEdit()")
                 if parameter.default is not inspect._empty:
                     exec(f"self.{parameter_name}_edit.setText(str(parameter.default))")
+                    exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
                 else:
                     exec(
-                        f"self.{parameter_name}_edit.setText(parameter.name + '.data')"
+                        f"""
+self.{parameter_name}_btn = TransparentPushButton('Load')
+self.{parameter_name}_btn.clicked.connect(partial(self._load_conjoint, '{parameter_name}'))
+self.{parameter_name}_edit.setText('self.{parameter_name}')   
+self._{parameter_name} = analysis_input    
+self.{parameter_name}_edit.setEnabled(False)            
+form_layout.addRow(label, self.{parameter_name}_edit)
+form_layout.addRow(self.{parameter_name}_btn)
+                    """,
                     )
-                    exec(f"self.{parameter_name}_edit.setEnabled(False)")
+                    # exec(f"self.{parameter_name}_btn = TransparentPushButton('Load')")
+                    # exec(f"self.{parameter_name}_btn.clicked.connect(lambda: self._load_conjoint(parameter_name))")
+                    # exec(
+                    #     f"self.{parameter_name}_edit.setText('analysis_input')"
+                    # )
+                    # exec(f"self.{parameter_name}_edit.setEnabled(False)")
+                    # exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
+                    # exec(f"form_layout.addRow(self.{parameter_name}_btn)")
 
-                hBoxLayout_cb = QHBoxLayout()
-                hBoxLayout_cb.addWidget(label)
-                # exec(f"hBoxLayout_cb.addWidget(self.{parameter_name}_edit)")
-                exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
+                # exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
 
     def _compare_others(self):
-        w = CompareDialog(self)
+        w = CompareDialog(self.project, self)
         if w.exec():
-            for project in get_workspace().children:
-                for dtb in project.dtbs:
-                    for data in dtb.data:
-                        if data == w.combox_data.currentText():
-                            compare_data = dtb.data[data].data[0]
+            for dtb in self.project.dtbs:
+                for simulation_result in dtb.data:
+                    for data in dtb.data[simulation_result].data:
+                        if data._gid.str == w.combox_data.currentText():
+                            compare_data = data
+
+            for data in self.project.data:
+                if isinstance(data, AnalysisResult):
+                    if data.name == w.combox_data.currentText():
+                        compare_data = data
+
             self._add_analysis(compare_data, compare=True)
 
         else:
             print("Cancel button is pressed")
+
+    def _analysis_with_others(self):
+        w = ConjointDialog(self.project, self)
+        if w.exec():
+            for dtb in self.project.dtbs:
+                for simulation_result in dtb.data:
+                    for data in dtb.data[simulation_result].data:
+                        if data._gid.str == w.combox_data.currentText():
+                            conjoint_data = data
+
+            for data in self.project.data:
+                if isinstance(data, AnalysisResult):
+                    if data.name == w.combox_data.currentText():
+                        conjoint_data = data
 
     def _delete_all_in_layout(self, thisLayout):
         item_list = list(range(thisLayout.count()))
@@ -309,8 +433,8 @@ class AnalysisPage(BasePage):
         w = ShowDataDialog(name, data, self)
         w.exec()
 
-    def _create_data_button(self, trait_name):
-        trait_content = self.data.trait_get()[trait_name]
+    def _create_data_button(self, trait_name, data):
+        trait_content = data
         btn_trait = TransparentPushButton(f"{trait_content}")
         btn_trait.setMaximumSize(10000, 100)
         btn_trait.clicked.connect(
@@ -318,10 +442,37 @@ class AnalysisPage(BasePage):
         )
         return btn_trait
 
+    def _save_analysises(self, analysises):
+        print("1")
+        dialog = SaveResultDialog(self)
+        if dialog.exec():
+            analysises.name = dialog.edit_name.text()
+        self.project.data += [analysises]
+
+    def _load_conjoint(self, parameter_name):
+        print(parameter_name)
+        dialog = ConjointDialog(self.project, self)
+        if dialog.exec():
+            data_load = dialog.combox_data.currentText()
+            for dtb in self.project.dtbs:
+                for simulation_result in dtb.data:
+                    for data in dtb.data[simulation_result].data:
+                        if data._gid.str == data_load:
+                            conjoint_data = data
+
+            for data in self.project.data:
+                if isinstance(data, AnalysisResult):
+                    if data.name == data_load:
+                        conjoint_data = data
+
+            # exec(f"self.{parameter_name}_edit.setText('{conjoint_data}')")
+            exec(f"self._{parameter_name} = conjoint_data")
+
 
 class CompareDialog(MessageBoxBase):
-    def __init__(self, parent=None):
+    def __init__(self, project, parent=None):
         super().__init__(parent=parent)
+        self.project = project
         self._setup_ui()
 
     def _setup_ui(self):
@@ -330,10 +481,20 @@ class CompareDialog(MessageBoxBase):
         self.viewLayout.addWidget(TitleLabel(title))
         self.viewLayout.addWidget(BodyLabel(content))
         self.combox_data = ComboBox(self)
-        for project in get_workspace().children:
-            for dtb in project.dtbs:
-                for data in dtb.data:
-                    self.combox_data.addItem(data)
+
+        for dtb in self.project.dtbs:
+            for simulation_result in dtb.data:
+                for data in dtb.data[simulation_result].data:
+                    self.combox_data.addItem(data._gid.str)
+
+        # for subject in self.project.subjects:
+        #     for name, data in subject:
+        #         self.combox_data.addItem(data)
+
+        for analysis_result in self.project.data:
+            if isinstance(analysis_result, AnalysisResult):
+                self.combox_data.addItem(analysis_result.name)
+
         self.viewLayout.addWidget(self.combox_data)
 
         self.cancelButton.hide()
@@ -349,5 +510,50 @@ class ShowDataDialog(MessageBoxBase):
     def _setup_ui(self):
         self.viewLayout.addWidget(TitleLabel(self.trait_name))
         self.viewLayout.addWidget(BodyLabel(f"{self.trait_data}"))
+
+        self.cancelButton.hide()
+
+
+class SaveResultDialog(MessageBoxBase):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+        self._setup_ui()
+
+    def _setup_ui(self):
+        self.viewLayout.addWidget(TitleLabel("Name the analysis result:"))
+        self.edit_name = LineEdit()
+        self.viewLayout.addWidget(self.edit_name)
+
+        self.cancelButton.hide()
+
+
+class ConjointDialog(MessageBoxBase):
+    def __init__(self, project, parent=None):
+        super().__init__(parent=parent)
+        self.project = project
+        self._setup_ui()
+
+    def _setup_ui(self):
+        title = "Compare Data"
+        content = """Choose data to analysis with current data."""
+        self.viewLayout.addWidget(TitleLabel(title))
+        self.viewLayout.addWidget(BodyLabel(content))
+        self.combox_data = ComboBox(self)
+
+        for dtb in self.project.dtbs:
+            for simulation_result in dtb.data:
+                for data in dtb.data[simulation_result].data:
+                    self.combox_data.addItem(data._gid.str)
+
+        # for subject in self.project.subjects:
+        #     for name, data in subject:
+        #         self.combox_data.addItem(data)
+
+        for analysis_result in self.project.data:
+            if isinstance(analysis_result, AnalysisResult):
+                self.combox_data.addItem(analysis_result.name)
+
+        self.viewLayout.addWidget(self.combox_data)
 
         self.cancelButton.hide()

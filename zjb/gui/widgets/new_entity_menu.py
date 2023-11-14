@@ -103,20 +103,20 @@ class NewEntityMenu(RoundMenu):
         """点击 Project 按钮， 新建 Project"""
         title = "Choose a parent Project \nAnd name your Project:"
         w = EntityCreationBase(title, "Project", self._item, self._window)
-        getdata = False
+        _getdata = False
         w.exec()
         if w.getflag() == "canel":
-            getdata = "canel"
+            _getdata = "canel"
         else:
             name = w.lineEdit.gettext().strip()
             if re.match(r"^.+$", name):
-                getdata = {"Project": w.getData("Project"), "name": name}
+                _getdata = {"Project": w.getData["Project"], "name": name}
 
-        if getdata == "canel":
+        if _getdata == "canel":
             return
-        elif not getdata == False:
-            parent_project: Project = getdata["Project"]
-            name = getdata["name"]
+        elif not _getdata == False:
+            parent_project: Project = _getdata["Project"]
+            name = _getdata["name"]
             new_project = parent_project.add_project(name)
             GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_project, parent_project)
         else:
@@ -129,20 +129,20 @@ class NewEntityMenu(RoundMenu):
         """点击 Subject 按钮，新建 Subject"""
         title = "Choose a parent Project \nAnd name your Subject:"
         w = EntityCreationBase(title, "Subject", self._item, self._window)
-        getdata = False
+        _getdata = False
         w.exec()
         if w.getflag() == "canel":
-            getdata = "canel"
+            _getdata = "canel"
         else:
             name = w.lineEdit.gettext().strip()
             if re.match(r"^.+$", name):
-                getdata = {"Project": w.getData("Project"), "name": name}
+                _getdata = {"Project": w.getData["Project"], "name": name}
 
-        if getdata == "canel":
+        if _getdata == "canel":
             return
-        elif not getdata == False:
-            parent_project: Project = getdata["Project"]
-            name = getdata["name"]
+        elif not _getdata == False:
+            parent_project: Project = _getdata["Project"]
+            name = _getdata["name"]
             new_subject = parent_project.add_subject(name)
             GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_subject, parent_project)
         else:
@@ -155,34 +155,34 @@ class NewEntityMenu(RoundMenu):
         """点击 DTBModel 按钮，新建 DTBModel"""
         title = "Choose an Atlas and a Dynamic Model \nAnd name your DTBModel:"
         w = DTBModelCreationDialog(title, "DTBModel", self._item, self._window)
-        getdata = False
+        _getdata = False
         w.exec()
         if w.getflag() == "canel":
-            getdata = "canel"
+            _getdata = "canel"
         else:
             name = w.lineEdit.gettext().strip()
             name_res = re.match(r"^.+$", name)
             if (
                 name_res == None
-                or w.getData("Atlas") == None
-                or w.getData("DynamicModel") == None
+                or w.getData["Atlas"] == None
+                or w.getData["DynamicModel"] == None
             ):
-                getdata = False
+                _getdata = False
             else:
-                getdata = {
-                    "Project": w.getData("Project"),
-                    "Atlas": w.getData("Atlas"),
-                    "DynamicModel": w.getData("DynamicModel"),
+                _getdata = {
+                    "Project": w.getData["Project"],
+                    "Atlas": w.getData["Atlas"],
+                    "DynamicModel": w.getData["DynamicModel"],
                     "name": name,
                 }
 
-        if getdata == "canel":
+        if _getdata == "canel":
             return
-        elif not getdata == False:
-            parent_project: Project = getdata["Project"]
-            select_atlas = getdata["Atlas"]
-            select_dynamics = getdata["DynamicModel"]
-            name = getdata["name"]
+        elif not _getdata == False:
+            parent_project: Project = _getdata["Project"]
+            select_atlas = _getdata["Atlas"]
+            select_dynamics = _getdata["DynamicModel"]
+            name = _getdata["name"]
             new_dtb_model = parent_project.add_model(
                 name, select_atlas, select_dynamics
             )
@@ -199,42 +199,42 @@ class NewEntityMenu(RoundMenu):
         """点击 DTB 按钮，新建 DTB"""
         title = "Choose a Subject and a DTB Model\nAnd name your DTB:"
         w = DTBCreationDialog(title, "DTB", self._item, self._window)
-        getdata = False
+        _getdata = False
         w.exec()
         if w.getflag() == "canel":
-            getdata = "canel"
+            _getdata = "canel"
         else:
             name = w.lineEdit.gettext().strip()
             name_res = re.match(r"^.+$", name)
             if (
                 name_res == None
-                or w.getData("Subject") == None
-                or w.getData("DTBModel") == None
-                or w.getData("Connectivity") == None
+                or w.getData["Subject"] == None
+                or w.getData["DTBModel"] == None
+                or w.getData["Connectivity"] == None
             ):
-                getdata = False
+                _getdata = False
             else:
-                getdata = {
-                    "Project": w.getData("Project"),
-                    "Subject": w.getData("Subject"),
-                    "DTBModel": w.getData("DTBModel"),
-                    "Connectivity": w.getData("Connectivity"),
+                _getdata = {
+                    "Project": w.getData["Project"],
+                    "Subject": w.getData["Subject"],
+                    "DTBModel": w.getData["DTBModel"],
+                    "Connectivity": w.getData["Connectivity"],
                     "name": name,
                 }
 
-        if getdata == "canel":
+        if _getdata == "canel":
             return
-        elif not getdata == False:
-            parent_project: Project = getdata["Project"]
-            select_subject = getdata["Subject"]
-            select_model = getdata["DTBModel"]
-            select_connectivity = getdata["Connectivity"]
-            name = getdata["name"]
+        elif not _getdata == False:
+            parent_project: Project = _getdata["Project"]
+            select_subject = _getdata["Subject"]
+            select_model = _getdata["DTBModel"]
+            select_connectivity = _getdata["Connectivity"]
+            name = _getdata["name"]
             new_dtb = parent_project.add_dtb(
                 name, select_subject, select_model, select_connectivity
             )
             GLOBAL_SIGNAL.dtbListUpdate[Data, Project].emit(new_dtb, parent_project)
-        elif getdata == False:
+        elif _getdata == False:
             show_error(
                 self.getTips("DTB"),
                 self._window,

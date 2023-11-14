@@ -145,15 +145,14 @@ class EntityCreationBase(MessageBoxBase):
 
         self.viewLayout.addWidget(self.lineEdit)
         self.viewLayout.addWidget(self.project_selector)
-
-    def getData(self, type: str):
-        """外部控件根据类型获取用户输入的信息"""
-        if type == "Project":
-            return self.project_selector.getCurrentValue()
-
         # 重写底部按钮
         self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
         self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
+
+    @property
+    def getData(self):
+        """外部控件根据类型获取用户输入的信息"""
+        return {"Project": self.project_selector.getCurrentValue()}
 
     def submit_date(self, str):
         """标记按钮的点击，关闭窗口"""
@@ -184,14 +183,14 @@ class DTBModelCreationDialog(EntityCreationBase):
         self.viewLayout.addWidget(self.atlas_selector)
         self.viewLayout.addWidget(self.dynamicModel_selector)
 
-    def getData(self, type: str):
+    @property
+    def getData(self):
         """外部控件根据类型获取用户输入的信息"""
-        if type == "Project":
-            return self.project_selector.getCurrentValue()
-        if type == "Atlas":
-            return self.atlas_selector.getCurrentValue()
-        if type == "DynamicModel":
-            return self.dynamicModel_selector.getCurrentValue()
+        return {
+            "Project": self.project_selector.getCurrentValue(),
+            "Atlas": self.atlas_selector.getCurrentValue(),
+            "DynamicModel": self.dynamicModel_selector.getCurrentValue(),
+        }
 
 
 class DTBCreationDialog(EntityCreationBase):
@@ -238,16 +237,15 @@ class DTBCreationDialog(EntityCreationBase):
         self.subject_selector.selectedDateChanged.connect(self.updateConnectivityList)
         self.dtbModel_selector.selectedDateChanged.connect(self.updateDTBModelList)
 
-    def getData(self, type: str):
+    @property
+    def getData(self):
         """外部控件根据类型获取用户输入的信息"""
-        if type == "Project":
-            return self.project_selector.getCurrentValue()
-        if type == "Subject":
-            return self.subject_selector.getCurrentValue()
-        if type == "DTBModel":
-            return self.dtbModel_selector.getCurrentValue()
-        if type == "Connectivity":
-            return self.connectivity_selector.getCurrentValue()
+        return {
+            "Project": self.project_selector.getCurrentValue(),
+            "Subject": self.subject_selector.getCurrentValue(),
+            "DTBModel": self.dtbModel_selector.getCurrentValue(),
+            "Connectivity": self.connectivity_selector.getCurrentValue(),
+        }
 
     def updateSubjectAndDTBModelList(self, project: Project):
         """选择不同的Project的时候，Subject列表和 DTB model列表会进行改变"""
@@ -274,12 +272,12 @@ class DTBCreationDialog(EntityCreationBase):
     def set_name(self, flag=True):
         """设置默认的 DTB 名称"""
         if flag:
-            sub_name = self.getData("Subject")
-            model_name = self.getData("DTBModel")
+            sub_name = self.getData["Subject"]
+            model_name = self.getData["DTBModel"]
             if not sub_name == None and not model_name == None:
                 self.lineEdit.settext(
                     _generate_key(
-                        self.getData("Project").dtbs,
+                        self.getData["Project"].dtbs,
                         f"{sub_name.name}-{model_name.name}",
                     )
                 )

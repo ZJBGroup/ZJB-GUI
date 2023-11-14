@@ -47,13 +47,14 @@ class Fileitem(CardWidget):
         self.vlayout.addWidget(self.fileicon, 0, Qt.AlignHCenter)
         self.vlayout.addWidget(self.filelabel, 1, Qt.AlignHCenter)
 
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._show_context_menu)
+        # self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        # self.customContextMenuRequested.connect(self._show_context_menu)
+        self.clicked.connect(self._show_context_menu)
 
     def _normalBackgroundColor(self):
         return QColor(255, 255, 255, 0)
 
-    def _show_context_menu(self, _):
+    def _show_context_menu(self):
         """右键点击一个条目时，触发右键菜单"""
         menu = RoundMenu()
         self.visualization_action = Action(

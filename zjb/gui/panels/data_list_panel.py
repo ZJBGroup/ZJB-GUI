@@ -102,7 +102,7 @@ class DTBFileitem(Fileitem):
         """点击一个 dtb 模拟数据时，显示弹窗"""
         title = f"Data in {name}"
         content = """Select data for visualization or analysis."""
-        w = ChooseDataDialog(data, self._data, self._parent)
+        w = ChooseDataDialog(data, self._project, self._parent)
         w.exec()
 
 

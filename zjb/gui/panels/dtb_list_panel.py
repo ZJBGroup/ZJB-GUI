@@ -1,6 +1,4 @@
 # coding:utf-8
-from multiprocessing import parent_process
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractScrollArea, QTreeWidgetItem
 from qfluentwidgets import FluentIcon, ScrollArea, SubtitleLabel, TreeWidget, VBoxLayout
@@ -19,6 +17,7 @@ class DTBInterface(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self._parent = parent
         self.setObjectName("DTBInterface")
         self.setStyleSheet("#DTBInterface{background:transparent;border:none}")
         self.rightClickItem = None
@@ -34,19 +33,18 @@ class DTBInterface(ScrollArea):
     def _update_tree_del(self, del_entity):
         """删除实体之后会更新列表"""
         for _item in self.tree.findItems(del_entity.name, Qt.MatchRecursive, 0):
-            if _item.getData() == del_entity:
+            if _item.getData == del_entity:
                 del_item = _item
                 break
         parent_item = del_item.parent()
         if isinstance(del_entity, Project):
-            parent_item.getData().remove_project(del_entity)
+            parent_item.getData.remove_project(del_entity)
         if isinstance(del_entity, Subject):
-            parent_item.getData().remove_subject(del_entity)
+            parent_item.getData.remove_subject(del_entity)
         if isinstance(del_entity, DTBModel):
-            parent_item.getData().remove_model(del_entity)
+            parent_item.getData.remove_model(del_entity)
         if isinstance(del_entity, DTB):
-            print("parent_item.getData()", parent_item.getData().name)
-            parent_item.getData().remove_dtb(del_entity)
+            parent_item.getData.remove_dtb(del_entity)
         parent_item.removeChild(del_item)
 
     def _update_tree_new(self, new_entity, parent_project: Project):
@@ -54,7 +52,7 @@ class DTBInterface(ScrollArea):
 
         # 找到列表中的父节点
         for _item in self.tree.findItems(parent_project.name, Qt.MatchRecursive, 0):
-            if _item.getData() == parent_project:
+            if _item.getData == parent_project:
                 parent_project_item = _item
                 break
         if isinstance(new_entity, Project):
@@ -79,7 +77,7 @@ class DTBInterface(ScrollArea):
         label = SubtitleLabel("You have not yet opened a workspace.")
         label.setWordWrap(True)
         self.vBoxLayout.addWidget(label)
-        self.vBoxLayout.setAlignment(Qt.AlignCenter)
+        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def _clear_layout(self):
         """清空布局"""
@@ -94,7 +92,7 @@ class DTBInterface(ScrollArea):
     def _on_workspace(self, ws: Workspace):
         """打开工作空间根据数据配置列表"""
         self._clear_layout()
-        self.vBoxLayout.setAlignment(Qt.AlignTop)
+        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.tree = TreeWidget(self)
         self.vBoxLayout.addWidget(self.tree)
@@ -114,12 +112,14 @@ class DTBInterface(ScrollArea):
         """左键点击一个条目"""
         if isinstance(item, SubjectItem):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                item.subject._gid.str, lambda _: SubjectPage(item.subject, item.parent().project)
+                item.subject._gid.str,
+                lambda _: SubjectPage(item.subject, item.parent().project),
             )
             return
         if isinstance(item, DTBItem):
             GLOBAL_SIGNAL.requestAddPage.emit(
-                item.dtb._gid.str, lambda _: DTBPage(item.dtb, item.parent().project)
+                item.dtb._gid.str,
+                lambda _: DTBPage(item.dtb, item.parent().project, self._parent),
             )
             return
         if isinstance(item, DTBModelItem):
@@ -133,7 +133,7 @@ class DTBInterface(ScrollArea):
         self.rightClickItem = self.tree.itemAt(pos)
         self.tree.setCurrentItem(self.rightClickItem)
         rightMenu = NewEntityMenu(
-            item=self.rightClickItem.getData(), window=self.window()
+            item=self.rightClickItem.getData, window=self.window()
         )
         rightMenu.exec(self.tree.mapToGlobal(pos))
 
@@ -155,6 +155,7 @@ class ProjectItem(QTreeWidgetItem):
         for dtb in project.dtbs:
             _ = DTBItem(dtb, self)
 
+    @property
     def getData(self):
         return self.project
 
@@ -167,6 +168,7 @@ class SubjectItem(QTreeWidgetItem):
         self.setText(0, subject.name)
         self.setIcon(0, FluentIcon.PEOPLE.icon())
 
+    @property
     def getData(self):
         return self.subject
 
@@ -180,6 +182,7 @@ class DTBModelItem(QTreeWidgetItem):
         self.setText(0, model.name)
         self.setIcon(0, FluentIcon.IOT.icon())
 
+    @property
     def getData(self):
         return self.model
 
@@ -193,5 +196,6 @@ class DTBItem(QTreeWidgetItem):
         self.setText(0, dtb.name)
         self.setIcon(0, FluentIcon.ALBUM.icon())
 
+    @property
     def getData(self):
         return self.dtb

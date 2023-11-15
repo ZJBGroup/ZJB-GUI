@@ -4,10 +4,11 @@ from typing import Any
 
 import numpy as np
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QFormLayout, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
+    IconWidget,
     LineEdit,
     MessageBoxBase,
     PrimaryPushButton,
@@ -16,14 +17,13 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentPushButton,
 )
-
 from zjb.doj.job import GeneratorJob, Job, JobState
-from zjb.main.api import DTB, PSEResult, SimulationResult, Project
+from zjb.main.api import DTB, Project
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_error, show_success
-from ..panels.data_operation_panel import DataOperationPanel
+from ..panels.data_list_panel import DataListPanel
 from ..widgets.choose_data_dialog import ChooseDataDialog
 from ..widgets.dict_editor import KeySetDictEditor
 from ..widgets.editor import FloatEditor, LineEditor
@@ -34,13 +34,12 @@ from .subject_page import SubjectPage
 
 
 class DTBPage(BasePage):
-    def __init__(self, dtb: DTB, project: Project):
-        super().__init__(dtb._gid.str, dtb.name, FluentIcon.ALBUM)
+    def __init__(self, dtb: DTB, project: Project, parent=None):
+        super().__init__(dtb._gid.str, dtb.name, FluentIcon.ALBUM, parent=parent)
         self.dtb = dtb
-        self.project = project
-
+        self._parent = parent
+        self._project = project
         self._setup_ui()
-
         self._sync_data()
         self.currentPageSignal.connect(self._sync_data)
 
@@ -53,58 +52,76 @@ class DTBPage(BasePage):
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.vBoxLayout.addWidget(TitleLabel("DTB"))
-        self.formLayout = QFormLayout()
-        self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.vBoxLayout.addLayout(self.formLayout)
+        # 页面信息部分
+        self.info_panel = QWidget(self)
+        self.info_panel_layout = QHBoxLayout(self.info_panel)
+        self.info_panel_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.pageicon = IconWidget(FluentIcon.ALBUM, self)
+        self.pageicon.setFixedSize(140, 140)
+        self.info_panel_layout.addWidget(self.pageicon)
 
-        self.formLayout.addRow(BodyLabel("name:"), BodyLabel(self.dtb.name))
-        btn_subject = TransparentPushButton(self.dtb.subject.name)
+        # 信息部分右侧文字及按钮部分
+        self.detail_panel = QWidget(self)
+        self.detail_panel.setMinimumHeight(40)
+        self.detail_panel_layout = QVBoxLayout(self.detail_panel)
+        self.detail_panel_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.detail_panel_layout.setContentsMargins(30, 0, 0, 0)
+        self.detail_panel_layout.addWidget(TitleLabel(self.dtb.name))
+
+        btn_subject = TransparentPushButton(
+            self.dtb.subject.name, icon=FluentIcon.PEOPLE
+        )
         btn_subject.clicked.connect(self._click_subject)
-        self.formLayout.addRow(BodyLabel("subject:"), btn_subject)
 
-        btn_model = TransparentPushButton(self.dtb.model.name)
+        btn_model = TransparentPushButton(self.dtb.model.name, icon=FluentIcon.IOT)
         btn_model.clicked.connect(self._click_model)
-        self.formLayout.addRow(BodyLabel("model:"), btn_model)
 
-        btn_connectivity = TransparentPushButton(f"{self.dtb.connectivity}")
+        btn_connectivity = TransparentPushButton("Connectivity")
         btn_connectivity.clicked.connect(self._click_connectivity)
 
-        self.formLayout.addRow(BodyLabel("connectivity:"), btn_connectivity)
+        # 数据按钮布局
+        self.detail_button_container = QWidget()
+        self.detail_button_layout = QHBoxLayout(self.detail_button_container)
+        self.detail_button_layout.setContentsMargins(0, 0, 0, 0)
+        self.detail_button_layout.addWidget(btn_subject)
+        self.detail_button_layout.addWidget(btn_model)
+        self.detail_button_layout.addWidget(btn_connectivity)
+        self.detail_panel_layout.addWidget(self.detail_button_container)
+
+        # 按钮组
+        self.button_group = QWidget(self)
+        self.button_group_layout = QHBoxLayout(self.button_group)
+        self.button_group_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.button_group_layout.setContentsMargins(0, 10, 0, 0)
 
         btn_simulate = PrimaryPushButton(f"Simulate")
+        btn_simulate.setFixedWidth(130)
         btn_simulate.clicked.connect(self._simulate)
-        self.vBoxLayout.addWidget(btn_simulate)
+        self.button_group_layout.addWidget(btn_simulate)
 
         btn_pse = PrimaryPushButton(f"PSE")
+        btn_pse.setFixedWidth(130)
         btn_pse.clicked.connect(self._pse)
-        self.vBoxLayout.addWidget(btn_pse)
+        self.button_group_layout.addWidget(btn_pse)
 
-        self.scrollArea = SmoothScrollArea(self)
-        self.vBoxLayout.addWidget(self.scrollArea)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollWidget = QWidget(self.scrollArea)
-        self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollLayout = QFormLayout(self.scrollWidget)
-        self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        # 数据列表
+        self.data_list = DataListPanel(
+            "dtb",
+            self.dtb.data.items(),
+            self.dtb.subject,
+            self._project,
+            self,
+        )
+
+        # 添加到布局中
+        self.detail_panel_layout.addWidget(self.button_group)
+        self.info_panel_layout.addWidget(self.detail_panel)
+        self.vBoxLayout.addWidget(self.info_panel)
+        self.vBoxLayout.addWidget(SubtitleLabel(f"Data in {self.dtb.name}:"))
+        self.vBoxLayout.addWidget(self.data_list)
 
     def _sync_data(self):
-        for i in reversed(range(self.scrollLayout.rowCount())):
-            self.scrollLayout.removeRow(i)
-
-        def _create_data_button(name, data):
-            btn_data = TransparentPushButton(f"{name}")
-            btn_data.clicked.connect(lambda: self._show_data_dialog(name, data))
-            self.scrollLayout.addRow(btn_data)
-
-        for name, data in self.dtb.data.items():
-            if isinstance(data, SimulationResult) or isinstance(data, PSEResult):
-                _create_data_button(name, data)
-            elif data is None:
-                self.scrollLayout.addRow(TransparentPushButton(f"{name}(running)"))
-            else:
-                data_manipulation_panel = DataOperationPanel(name, data, self.project)
-                self.scrollLayout.addRow(data_manipulation_panel)
+        self.data_list.sync_list(self.dtb.data)
 
     def _poll(self):
         _removing = []
@@ -134,7 +151,6 @@ class DTBPage(BasePage):
             if not store_key:
                 store_key = _generate_key(data, "simulation")
             self.dtb.data = data | {store_key: None}
-        self.scrollLayout.addRow(TransparentPushButton(f"{store_key}(running)"))
         job = Job(DTB.simulate, self.dtb, store_key=store_key)
         if dialog.params:
             job.kwargs |= {"dynamic_parameters": dialog.params}
@@ -142,6 +158,7 @@ class DTBPage(BasePage):
         self._running_jobs[store_key] = job
         GLOBAL_SIGNAL.joblistChanged.emit()
         show_success(f"Simulation {store_key} started!", self.window())
+        self._sync_data()
 
     def _pse(self):
         ws = get_workspace()
@@ -155,12 +172,11 @@ class DTBPage(BasePage):
             if not store_key:
                 store_key = _generate_key(data, "pse")
             self.dtb.data = data | {store_key: None}
-        self.scrollLayout.addRow(TransparentPushButton(f"{store_key}(running)"))
         job = GeneratorJob(DTB.pse, self.dtb, dialog.params, store_key=store_key)
         ws.manager.bind(job)
         self._running_jobs[store_key] = job
         GLOBAL_SIGNAL.joblistChanged.emit()
-        show_success(f"PSE {store_key} started!", self.window())
+        self._sync_data()
 
     def _click_subject(self):
         subject = self.dtb.subject
@@ -174,7 +190,6 @@ class DTBPage(BasePage):
 
     def _click_connectivity(self):
         connectivity = self.dtb.connectivity
-
         GLOBAL_SIGNAL.requestAddPage.emit(
             connectivity._gid.str, lambda _: ConnectivityPage(connectivity)
         )

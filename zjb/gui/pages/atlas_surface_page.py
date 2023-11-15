@@ -107,7 +107,7 @@ class AtlasSurfacePage(BasePage):
     def _on_choose_colorbar_cbb_changed(self, colorbar_name):
         if colorbar_name == "BNA-standard":
             self.ui.atlas_surface_view_widget.setColorMap(
-                "./" + find_resource_file("colorbar/BNA-standard.csv")
+                "./" + find_resource_file("colorbar/BNA-standard.csv", abs=False)
             )
             self.ui.color_number_edit.setText("256")
         if colorbar_name == "default":

@@ -53,7 +53,7 @@ class RegionalTimeSeriesPage(BasePage):
             self.atlas, self.surface, self.surface_region_mapping
         )
         self.ui.atlas_surface_view_widget.setColorMap(
-            "./" + find_resource_file("colorbar/CET-ZJB.csv")
+            "./" + find_resource_file("colorbar/CET-ZJB.csv", abs=False)
         )
         self.ui.time_slider.setValue(0)
         self.setColorBar()

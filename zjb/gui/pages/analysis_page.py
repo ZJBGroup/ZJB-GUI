@@ -379,7 +379,6 @@ if isinstance(analysis_data, parameter_type):
     analysis_input = analysis_data
 
 elif isinstance(analysis_data.data, parameter_type):
-    cb_analysis.addItem(analysis_func)
     analysis_input = analysis_data.data
 self._{parameter_name} = analysis_input    
 self.{parameter_name}_edit.setEnabled(False)            
@@ -460,11 +459,12 @@ form_layout.addRow(self.{parameter_name}_btn)
         return btn_trait
 
     def _save_analysises(self, analysises):
-        print("1")
         dialog = SaveResultDialog(self)
         if dialog.exec():
             analysises.name = dialog.edit_name.text()
-        self.project.data += [analysises]
+            self.project.data += [analysises]
+        else:
+            pass
 
     def _load_conjoint(self, parameter_name):
         print(parameter_name)
@@ -484,6 +484,9 @@ form_layout.addRow(self.{parameter_name}_btn)
 
             # exec(f"self.{parameter_name}_edit.setText('{conjoint_data}')")
             exec(f"self._{parameter_name} = conjoint_data")
+
+        else:
+            pass
 
 
 class CompareDialog(MessageBoxBase):
@@ -573,4 +576,4 @@ class ConjointDialog(MessageBoxBase):
 
         self.viewLayout.addWidget(self.combox_data)
 
-        self.cancelButton.hide()
+        # self.cancelButton.hide()

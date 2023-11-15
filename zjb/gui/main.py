@@ -1,4 +1,7 @@
 # coding:utf-8
+import os
+
+os.chdir(os.path.dirname(__file__))
 import sys
 
 from PyQt5.QtCore import QPoint, Qt

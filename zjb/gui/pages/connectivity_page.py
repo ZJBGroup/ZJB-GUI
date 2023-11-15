@@ -27,6 +27,7 @@ class ConnectivityPage(BasePage):
     def _setup_ui(self):
         self.ui = Ui_connectivity_page()
         self.ui.setupUi(self)
+        self.ui.splitter.setSizes([500, 2000, 2000])
 
         self.ui.brain_regions_panel.region_signal_list.connect(
             self._on_region_signal_change

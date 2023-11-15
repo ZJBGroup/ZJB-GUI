@@ -35,6 +35,7 @@ from zjb.main.api import (
     SpaceSeries,
     TimeSeries,
     zjb_analysis,
+    Connectivity,
 )
 
 from .._global import GLOBAL_SIGNAL, get_workspace
@@ -480,7 +481,14 @@ form_layout.addRow(self.{parameter_name}_btn)
             for data in self.project.data:
                 if isinstance(data, AnalysisResult):
                     if data.name == data_load:
-                        conjoint_data = data
+                        conjoint_data = data.data
+
+            for subject in self.project.subjects:
+                for name in subject.data:
+                    if isinstance(subject.data[name], Connectivity):
+                        if subject.data[name]._gid.str == data_load:
+                            conjoint_data = subject.data[name].data
+
 
             # exec(f"self.{parameter_name}_edit.setText('{conjoint_data}')")
             exec(f"self._{parameter_name} = conjoint_data")
@@ -545,7 +553,7 @@ class SaveResultDialog(MessageBoxBase):
         self.edit_name = LineEdit()
         self.viewLayout.addWidget(self.edit_name)
 
-        self.cancelButton.hide()
+        # self.cancelButton.hide()
 
 
 class ConjointDialog(MessageBoxBase):
@@ -566,9 +574,14 @@ class ConjointDialog(MessageBoxBase):
                 for data in dtb.data[simulation_result].data:
                     self.combox_data.addItem(data._gid.str)
 
-        # for subject in self.project.subjects:
-        #     for name, data in subject:
-        #         self.combox_data.addItem(data)
+        for subject in self.project.subjects:
+            for name in subject.data:
+                print(name)
+                print(subject.data[name])
+                if isinstance(subject.data[name], Connectivity):
+                    print(subject.data[name]._gid.str)
+                    self.combox_data.addItem(subject.data[name]._gid.str)
+
 
         for analysis_result in self.project.data:
             if isinstance(analysis_result, AnalysisResult):

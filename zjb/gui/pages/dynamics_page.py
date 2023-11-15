@@ -279,7 +279,7 @@ class PhasePlanePage(SmoothScrollArea):
         if not self._model:
             return
 
-        self.ui.main_layout.insertLayout(0, self.form_layout)
+        self.ui.verticalLayout.insertLayout(0, self.form_layout)
 
         state_variables = self._model.state_variables
         transient_variables = self._model.transient_variables
@@ -448,7 +448,7 @@ class BifurcationPage(SmoothScrollArea):
 
         self.ui.start_btn.clicked.connect(self._start_bifurcation_worker)
 
-        self.form_layout = QFormLayout(self.ui.container)
+        self.form_layout = QFormLayout()
 
         self._model = None
 
@@ -472,7 +472,7 @@ class BifurcationPage(SmoothScrollArea):
         if not self._model:
             return
 
-        self.ui.main_layout.insertLayout(0, self.form_layout)
+        self.ui.verticalLayout.insertLayout(0, self.form_layout)
 
         state_variables = self._model.state_variables
         transient_variables = self._model.transient_variables

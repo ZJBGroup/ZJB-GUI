@@ -44,7 +44,7 @@ class DynamicModelInterface(ScrollArea):
         _page = DynamicsInformationPage(
             routeKey,
             self.select_dynamicsModel.name + "information",
-            FluentIcon.DEVELOPER_TOOLS,
+            FluentIcon.ROBOT,
             self.select_dynamicsModel,
             0,
         )

@@ -14,7 +14,7 @@ from .connectivity_page_ui import Ui_connectivity_page
 
 class ConnectivityPage(BasePage):
     def __init__(self, connectivity: Connectivity):
-        super().__init__(connectivity._gid.str, "Connectivity", FluentIcon.PEOPLE)
+        super().__init__(connectivity._gid.str, "Connectivity", FluentIcon.FIT_PAGE)
         self.connectivity = connectivity
         self.atlas = connectivity.space.atlas
 

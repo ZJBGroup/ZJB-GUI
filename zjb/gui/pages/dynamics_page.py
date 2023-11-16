@@ -624,7 +624,7 @@ class DynamicsInformationPage(BasePage):
             _page = DynamicsInformationPage(
                 routeKey,
                 "PhasePlane for" + self._model.name,
-                FluentIcon.DOCUMENT,
+                FluentIcon.ROBOT,
                 self._model,
                 self.index,
             )
@@ -632,7 +632,7 @@ class DynamicsInformationPage(BasePage):
             _page = DynamicsInformationPage(
                 routeKey,
                 "Bifurcation for" + self._model.name,
-                FluentIcon.DOCUMENT,
+                FluentIcon.ROBOT,
                 self._model,
                 self.index,
             )

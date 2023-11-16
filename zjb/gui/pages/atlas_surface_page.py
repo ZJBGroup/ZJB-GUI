@@ -16,7 +16,7 @@ class AtlasSurfacePage(BasePage):
 
     def __init__(self, atlas: Atlas, subject: Subject):
         super().__init__(
-            atlas._gid.str, atlas.name + " Surface Visualization", FluentIcon.DOCUMENT
+            atlas._gid.str, atlas.name + " Surface Visualization", FluentIcon.EDUCATION
         )
         self.atlas = atlas
         self.subject = subject

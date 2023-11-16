@@ -31,7 +31,7 @@ class AtlasInterface(ScrollArea):
         else:
             for atlas in self._workspace.atlases:
                 atlasItem = QListWidgetItem(atlas.name)
-                atlasItem.setIcon(FluentIcon.DOCUMENT.icon())
+                atlasItem.setIcon(FluentIcon.EDUCATION.icon())
 
                 self.listWidget.addItem(atlasItem)
 

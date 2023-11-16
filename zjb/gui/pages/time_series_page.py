@@ -14,7 +14,7 @@ from .time_series_page_ui import Ui_time_series_page
 
 class RegionalTimeSeriesPage(BasePage):
     def __init__(self, regional_timeseries: RegionalTimeSeries, subject: Subject):
-        super().__init__(regional_timeseries._gid.str + "Visualization", "Time Series", FluentIcon.PEOPLE)
+        super().__init__(regional_timeseries._gid.str + "Visualization", "Time Series", FluentIcon.SPEED_HIGH)
         self.timeseries = regional_timeseries
         self.atlas = regional_timeseries.space.atlas
         self.subject = subject

@@ -81,6 +81,12 @@ class DataOperationPanel(QWidget):
             )
 
         elif isinstance(self.data, RegionalTimeSeries):
+
+            if self.data.space.atlas.name == "AAL90":
+                for subject in self._workspace.subjects:
+                        if subject.name == "cortex_80k":
+                            self.subject = subject
+
             GLOBAL_SIGNAL.requestAddPage.emit(
                 self.data._gid.str,
                 lambda _: RegionalTimeSeriesPage(self.data, self.subject),

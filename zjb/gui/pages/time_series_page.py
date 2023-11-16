@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 from qfluentwidgets import FluentIcon
 import sip
 
-from zjb.main.api import Atlas, RegionalTimeSeries, Subject
+from zjb.main.api import Atlas, RegionalTimeSeries, Subject, Surface, SurfaceRegionMapping
 
 from .._global import GLOBAL_SIGNAL
 from .._rc import find_resource_file
@@ -46,8 +46,11 @@ class RegionalTimeSeriesPage(BasePage):
         self.ui.start_btn.clicked.connect(self._on_start_btn_clicked)
 
     def _show_atlas(self):
-        self.surface = self.subject.data["surface_LR32k"]
-        self.surface_region_mapping = self.subject.data["BNA-surface_space_LR32k"]
+        for data_key in self.subject.data:
+            if isinstance(self.subject.data[data_key], Surface):
+                self.surface = self.subject.data[data_key]
+            elif isinstance(self.subject.data[data_key], SurfaceRegionMapping):
+                self.surface_region_mapping = self.subject.data[data_key]
         self.ui.atlas_surface_view_widget.clear()
         self.ui.atlas_surface_view_widget.setAtlas(
             self.atlas, self.surface, self.surface_region_mapping

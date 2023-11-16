@@ -47,9 +47,14 @@ class AtlasInterface(ScrollArea):
                 break
 
         for subject in self._workspace.subjects:
-            if subject.name == "fsaverage":
-                select_subject = subject
-                break
+            if select_atlas_name == "AAL90":
+                if subject.name == "cortex_80k":
+                    select_subject = subject
+                    break
+            else:
+                if subject.name == "fsaverage":
+                    select_subject = subject
+                    break
 
         GLOBAL_SIGNAL.requestAddPage.emit(
             select_atlas._gid.str,

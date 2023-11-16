@@ -9,7 +9,6 @@ from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
-    QMessageBox,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
@@ -19,6 +18,7 @@ from PyQt5.QtWidgets import (
 from qfluentwidgets import (
     FluentIcon,
     FluentWindow,
+    IconWidget,
     MessageBox,
     MSFluentTitleBar,
     NavigationItemPosition,
@@ -46,7 +46,6 @@ class CustomTitleBar(MSFluentTitleBar):
 
     def __init__(self, parent):
         super().__init__(parent)
-
         self.newButton = NewButton("New", window=self.window())
         self.openButton = OpenButton("Open", window=self.window())
         self.openButton.openWelcomePage.connect(
@@ -62,6 +61,12 @@ class CustomTitleBar(MSFluentTitleBar):
         self.toolButtonLayout.addWidget(self.openButton)
         self.toolButtonLayout.addWidget(self.jupyterButton)
         self.hBoxLayout.insertLayout(4, self.toolButtonLayout)
+
+        self.iconLabel.hide()
+        self.titleLabel.setContentsMargins(10, 0, 0, 0)
+        self.hBoxLayout.insertWidget(
+            0, self.titleLabel, 0, Qt.AlignLeft | Qt.AlignVCenter
+        )
 
     def _addWelcomePage(self, routeKey: str):
         """新建欢迎页面的回调函数"""
@@ -200,8 +205,11 @@ class MainWindow(FluentWindow):
 
         self.setTitleBar(CustomTitleBar(self))
         self.resize(1150, 750)
-        self.setWindowIcon(QIcon(find_resource_file("icon/logo.jpg")))
         self.setWindowTitle("Zhejiang Lab Brain")
+
+        self.windowicon = IconWidget(QIcon(find_resource_file("icon/logo.jpg")), self)
+        self.windowicon.setFixedSize(33, 33)
+        self.windowicon.move(10, 10)
 
         # 重新布局保证目录栏宽度可伸缩
         self.widgetLayout = QSplitter(self)
@@ -214,7 +222,6 @@ class MainWindow(FluentWindow):
         self.widgetLayout.addWidget(self.stackedWidget)
         self.widgetLayout.setStyleSheet("background-color: transparent")
         self.hBoxLayout.setContentsMargins(0, 48, 0, 0)
-
         # 右侧的窗口群
         self.widgetWindows = WinInterface(self)
         self.widgetLayout.addWidget(self.widgetWindows)

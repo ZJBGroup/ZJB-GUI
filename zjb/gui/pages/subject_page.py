@@ -67,9 +67,7 @@ class SubjectPage(BasePage):
         self.info_panel_layout.addWidget(self.detail_panel)
         self.vBoxLayout.addWidget(self.info_panel)
 
-        self.vBoxLayout.addWidget(
-            SubtitleLabel(f"Connectivity in {self._subject.name}:")
-        )
+        self.vBoxLayout.addWidget(SubtitleLabel(f"Data in {self._subject.name}:"))
         # 数据列表
         self.data_list = DataListPanel(
             "subject",

@@ -26,9 +26,11 @@ from qfluentwidgets import (
     TabBar,
     TabCloseButtonDisplayMode,
     TransparentPushButton,
+    isDarkTheme,
 )
 from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
+from zjb.gui.common.config import cfg
 from zjb.gui.pages.base_page import BasePage
 from zjb.gui.pages.jupyter_page import JupyterPage
 from zjb.gui.pages.setting_page import SettingInterface
@@ -199,6 +201,15 @@ class MainWindow(FluentWindow):
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.requestAddPage.connect(self.addPage)
         GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
+        cfg.themeChanged.connect(
+            lambda: self.windowicon.setIcon(
+                QIcon(find_resource_file("icon/logo-white.png"))
+            )
+            if isDarkTheme()
+            else self.windowicon.setIcon(
+                QIcon(find_resource_file("icon/logo-black.png"))
+            )
+        )
 
     def initWindow(self):
         """初始化窗口"""
@@ -207,9 +218,16 @@ class MainWindow(FluentWindow):
         self.resize(1150, 750)
         self.setWindowTitle("Zhejiang Lab Brain")
 
-        self.windowicon = IconWidget(QIcon(find_resource_file("icon/logo.jpg")), self)
-        self.windowicon.setFixedSize(33, 33)
-        self.windowicon.move(10, 10)
+        self.windowicon = IconWidget(
+            QIcon(find_resource_file("icon/logo-white.png")), self
+        )
+
+        if isDarkTheme():
+            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-white.png")))
+        else:
+            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-black.png")))
+        self.windowicon.setFixedSize(50, 50)
+        self.windowicon.move(2, 2)
 
         # 重新布局保证目录栏宽度可伸缩
         self.widgetLayout = QSplitter(self)

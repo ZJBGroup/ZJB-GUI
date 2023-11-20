@@ -203,11 +203,11 @@ class MainWindow(FluentWindow):
         GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
         cfg.themeChanged.connect(
             lambda: self.windowicon.setIcon(
-                QIcon(find_resource_file("icon/logo-white.png"))
+                QIcon(find_resource_file("icon/logo-white.svg"))
             )
             if isDarkTheme()
             else self.windowicon.setIcon(
-                QIcon(find_resource_file("icon/logo-black.png"))
+                QIcon(find_resource_file("icon/logo-black.svg"))
             )
         )
 
@@ -219,15 +219,15 @@ class MainWindow(FluentWindow):
         self.setWindowTitle("Zhejiang Lab Brain")
 
         self.windowicon = IconWidget(
-            QIcon(find_resource_file("icon/logo-white.png")), self
+            QIcon(find_resource_file("icon/logo-white.svg")), self
         )
 
         if isDarkTheme():
-            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-white.png")))
+            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-white.svg")))
         else:
-            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-black.png")))
-        self.windowicon.setFixedSize(50, 50)
-        self.windowicon.move(2, 2)
+            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-black.svg")))
+        self.windowicon.setFixedSize(35, 35)
+        self.windowicon.move(10, 10)
 
         # 重新布局保证目录栏宽度可伸缩
         self.widgetLayout = QSplitter(self)

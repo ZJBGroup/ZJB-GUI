@@ -3,12 +3,12 @@ from threading import Thread
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QMovie
+from PyQt5.QtGui import QIcon, QMovie
 from qfluentwidgets import FluentIcon, ListWidget
+from qfluentwidgets.common.icon import FluentIconEngine, Icon
 from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
-from ..common.config import cfg
 from ..common.config_path import get_local_config_path, sync_recent_config
 from ..common.download_file import DownLoadFile
 from ..common.utils import show_success
@@ -39,10 +39,10 @@ class StartPanel(QtWidgets.QWidget):
         self.right_panel_layout = QtWidgets.QVBoxLayout(self.right_panel)
         self.listWidget = ListWidget(self)
         self.newWorkspace = QtWidgets.QListWidgetItem("New Workspace")
-        self.newWorkspace.setIcon(FluentIcon.FOLDER_ADD.icon())
+        self.newWorkspace.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.FOLDER_ADD))))
         self.listWidget.addItem(self.newWorkspace)
         self.openWorkspace = QtWidgets.QListWidgetItem("Open Workspace")
-        self.openWorkspace.setIcon(FluentIcon.FOLDER.icon())
+        self.openWorkspace.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.FOLDER))))
         self.listWidget.addItem(self.openWorkspace)
         self.right_panel_layout.addWidget(self.listWidget)
         self.right_panel.setMaximumWidth(200)
@@ -51,7 +51,6 @@ class StartPanel(QtWidgets.QWidget):
         # 增加布局
         self.hBoxLayout.addWidget(self.left_panel)
         self.hBoxLayout.addWidget(self.right_panel)
-        cfg.themeChanged.connect(lambda: self._sync_listWidget())
 
     def _on_current_item_click(self, item: QtWidgets.QListWidgetItem):
         """
@@ -96,17 +95,6 @@ class StartPanel(QtWidgets.QWidget):
             show_success(
                 f"Successfully opened workspace {workspace_name}", self._parent
             )
-
-    def _sync_listWidget(self):
-        """主要用于主题修改之后，刷新一下列表更新图标的颜色"""
-        self.listWidget.clear()
-        self.listWidget.clearSelection()
-        self.newWorkspace = QtWidgets.QListWidgetItem("New Workspace")
-        self.newWorkspace.setIcon(FluentIcon.FOLDER_ADD.icon())
-        self.listWidget.addItem(self.newWorkspace)
-        self.openWorkspace = QtWidgets.QListWidgetItem("Open Workspace")
-        self.openWorkspace.setIcon(FluentIcon.FOLDER.icon())
-        self.listWidget.addItem(self.openWorkspace)
 
 
 class RecentPanel(QtWidgets.QWidget):

@@ -1,7 +1,9 @@
 # coding:utf-8
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAbstractScrollArea, QTreeWidgetItem
 from qfluentwidgets import FluentIcon, ScrollArea, SubtitleLabel, TreeWidget, VBoxLayout
+from qfluentwidgets.common.icon import FluentIconEngine, Icon
 from zjb.dos.data import Data
 from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
@@ -145,7 +147,7 @@ class ProjectItem(QTreeWidgetItem):
         self.project = project
 
         self.setText(0, project.name)
-        self.setIcon(0, FluentIcon.FOLDER.icon())
+        self.setIcon(0, QIcon(FluentIconEngine(Icon(FluentIcon.FOLDER))))
         for child in project.children:
             _ = ProjectItem(child, self)
         for subject in project.subjects:
@@ -166,7 +168,7 @@ class SubjectItem(QTreeWidgetItem):
         self.subject = subject
 
         self.setText(0, subject.name)
-        self.setIcon(0, FluentIcon.PEOPLE.icon())
+        self.setIcon(0, QIcon(FluentIconEngine(Icon(FluentIcon.PEOPLE))))
 
     @property
     def getData(self):
@@ -180,7 +182,7 @@ class DTBModelItem(QTreeWidgetItem):
         self.model = model
 
         self.setText(0, model.name)
-        self.setIcon(0, FluentIcon.IOT.icon())
+        self.setIcon(0, QIcon(FluentIconEngine(Icon(FluentIcon.IOT))))
 
     @property
     def getData(self):
@@ -194,7 +196,7 @@ class DTBItem(QTreeWidgetItem):
         self.dtb = dtb
 
         self.setText(0, dtb.name)
-        self.setIcon(0, FluentIcon.ALBUM.icon())
+        self.setIcon(0, QIcon(FluentIconEngine(Icon(FluentIcon.ALBUM))))
 
     @property
     def getData(self):

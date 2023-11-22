@@ -1,7 +1,8 @@
 # coding:utf-8
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem, QVBoxLayout
 from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
-
+from qfluentwidgets.common.icon import FluentIconEngine, Icon
 from zjb.main.manager.workspace import Workspace
 
 from .._global import GLOBAL_SIGNAL
@@ -28,7 +29,7 @@ class DynamicModelInterface(ScrollArea):
         self._workspace = workspace
         for item in self._workspace.dynamics:
             dynamicsItem = QListWidgetItem(item.name)
-            dynamicsItem.setIcon(FluentIcon.ROBOT.icon())
+            dynamicsItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.ROBOT))))
             self.listWidget.addItem(dynamicsItem)
 
     def _itemClicked(self, item: QListWidgetItem):

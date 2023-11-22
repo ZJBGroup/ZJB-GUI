@@ -1,6 +1,8 @@
 # coding:utf-8
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem
 from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
+from qfluentwidgets.common.icon import FluentIconEngine, Icon
 
 from .._global import GLOBAL_SIGNAL
 from ..pages.base_page import BasePage
@@ -17,11 +19,11 @@ class JobManagerInterface(ScrollArea):
         self.listWidget = ListWidget(self)
 
         jobItem = QListWidgetItem("Job List")
-        jobItem.setIcon(FluentIcon.DOCUMENT.icon())
+        jobItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.DOCUMENT))))
         self.listWidget.addItem(jobItem)
 
         workerItem = QListWidgetItem("Worker Manager")
-        workerItem.setIcon(FluentIcon.DEVELOPER_TOOLS.icon())
+        workerItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.DEVELOPER_TOOLS))))
         self.listWidget.addItem(workerItem)
 
         self.hBoxLayout = QHBoxLayout(self)

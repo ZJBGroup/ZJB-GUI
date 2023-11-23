@@ -203,11 +203,11 @@ class MainWindow(FluentWindow):
         GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
         cfg.themeChanged.connect(
             lambda: self.windowicon.setIcon(
-                QIcon(find_resource_file("icon/logo-white.svg"))
+                QIcon(find_resource_file("icon/logo_white_smaller.png"))
             )
             if isDarkTheme()
             else self.windowicon.setIcon(
-                QIcon(find_resource_file("icon/logo-black.svg"))
+                QIcon(find_resource_file("icon/logo_black_smaller.png"))
             )
         )
 
@@ -219,13 +219,17 @@ class MainWindow(FluentWindow):
         self.setWindowTitle("Zhejiang Lab Brain")
 
         self.windowicon = IconWidget(
-            QIcon(find_resource_file("icon/logo-white.svg")), self
+            QIcon(find_resource_file("icon/logo_white_smaller.png")), self
         )
 
         if isDarkTheme():
-            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-white.svg")))
+            self.windowicon.setIcon(
+                QIcon(find_resource_file("icon/logo_white_smaller.png"))
+            )
         else:
-            self.windowicon.setIcon(QIcon(find_resource_file("icon/logo-black.svg")))
+            self.windowicon.setIcon(
+                QIcon(find_resource_file("icon/logo_black_smaller.png"))
+            )
         self.windowicon.setFixedSize(35, 35)
         self.windowicon.move(10, 10)
 

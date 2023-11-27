@@ -1,12 +1,13 @@
 import copy
+import traceback
 import typing
 import uuid
 from functools import partial
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QFormLayout, QWidget
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QFormLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
@@ -26,6 +27,7 @@ from zjb.main.dtb.dynamics_model import (
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL
+from ..common.utils import show_error, show_info, show_success
 from ..widgets.bifurcation_widget_ui import Ui_bifurcation_widget
 from ..widgets.editor import FloatEditor
 from ..widgets.phase_plane_widget_ui import Ui_phase_plane_widget
@@ -116,10 +118,6 @@ class DynamicsModelInfoPage(SmoothScrollArea):
                 BodyLabel(expression2unicode(f"{name}_i={value.expression}")),
             )
 
-        # self.main_layout.addRow(
-        #     StrongBodyLabel('Observable Variables: ' + f'{observable_variables}'),
-        # )
-
         self.main_layout.addRow(
             SubtitleLabel("Parameters: "),
         )
@@ -146,6 +144,10 @@ class PhasePlaneWorker(QThread):
     # 定义一个信号，用于发送处理结果
     _resultReady = pyqtSignal(PhasePlanePlots)
     ppp = None
+    error_signal = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
 
     def set_phase_plane_page(self, ppp):
         self.ppp = ppp
@@ -154,85 +156,92 @@ class PhasePlaneWorker(QThread):
         """加入按钮所需执行的相图分析代码，得到PhasePlanePlots类型的分析结果"""
 
         plt.close("all")
-        pp = PhasePlaneFunc()
-        pp.model = self.ppp._model
 
-        dict_target_vars = {}
-        dict_target_vars[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
+        try:
+            pp = PhasePlaneFunc()
+            pp.model = self.ppp._model
+
+            dict_target_vars = {}
+            dict_target_vars[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.ppp.ui.tvx_start_edit.text()),
+                float(self.ppp.ui.tvx_end_edit.text()),
             ]
-        ] = [
-            float(self.ppp.ui.tvx_start_edit.text()),
-            float(self.ppp.ui.tvx_end_edit.text()),
-        ]
-        dict_target_vars[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-                + 1
-                + self.ppp.ui.target_variable_y_cbb.currentIndex()
+            dict_target_vars[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                    + 1
+                    + self.ppp.ui.target_variable_y_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.ppp.ui.tvy_start_edit.text()),
+                float(self.ppp.ui.tvy_end_edit.text()),
             ]
-        ] = [
-            float(self.ppp.ui.tvy_start_edit.text()),
-            float(self.ppp.ui.tvy_end_edit.text()),
-        ]
 
-        pp.target_vars = dict_target_vars
+            pp.target_vars = dict_target_vars
 
-        fixed_var = self.ppp.available_variables[:]
-        fixed_var.remove(
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-            ]
-        )
-        fixed_var.remove(
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-                + 1
-                + self.ppp.ui.target_variable_y_cbb.currentIndex()
-            ]
-        )
-        dict_fixed_var = {}
-        for fixed_var in fixed_var:
-            dict_fixed_var[fixed_var] = 0
+            fixed_var = self.ppp.available_variables[:]
+            fixed_var.remove(
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                ]
+            )
+            fixed_var.remove(
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                    + 1
+                    + self.ppp.ui.target_variable_y_cbb.currentIndex()
+                ]
+            )
+            dict_fixed_var = {}
+            for fixed_var in fixed_var:
+                dict_fixed_var[fixed_var] = 0
 
-        pp.fixed_vars = dict_fixed_var
+            pp.fixed_vars = dict_fixed_var
 
-        dict_resolutions = {}
-        dict_resolutions[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-            ]
-        ] = float(self.ppp.ui.tvx_step_edit.text())
-        dict_resolutions[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-                + 1
-                + self.ppp.ui.target_variable_y_cbb.currentIndex()
-            ]
-        ] = float(self.ppp.ui.tvy_step_edit.text())
+            dict_resolutions = {}
+            dict_resolutions[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                ]
+            ] = float(self.ppp.ui.tvx_step_edit.text())
+            dict_resolutions[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                    + 1
+                    + self.ppp.ui.target_variable_y_cbb.currentIndex()
+                ]
+            ] = float(self.ppp.ui.tvy_step_edit.text())
 
-        pp.resolutions = dict_resolutions
+            pp.resolutions = dict_resolutions
 
-        dict_trajectory = {}
-        dict_trajectory[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-            ]
-        ] = [float(self.ppp.ui.trajectory_points_x_edit.text())]
-        dict_trajectory[
-            self.ppp.available_variables[
-                self.ppp.ui.target_variable_x_cbb.currentIndex()
-                + 1
-                + self.ppp.ui.target_variable_y_cbb.currentIndex()
-            ]
-        ] = [float(self.ppp.ui.trajectory_points_y_edit.text())]
+            dict_trajectory = {}
+            dict_trajectory[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                ]
+            ] = [float(self.ppp.ui.trajectory_points_x_edit.text())]
+            dict_trajectory[
+                self.ppp.available_variables[
+                    self.ppp.ui.target_variable_x_cbb.currentIndex()
+                    + 1
+                    + self.ppp.ui.target_variable_y_cbb.currentIndex()
+                ]
+            ] = [float(self.ppp.ui.trajectory_points_y_edit.text())]
 
-        pp.trajectory = dict_trajectory
-        pp.trajectory_duration = float(self.ppp.ui.trajectory_duration_edit.text())
-        ppPlots = pp()
+            pp.trajectory = dict_trajectory
+            pp.trajectory_duration = float(self.ppp.ui.trajectory_duration_edit.text())
 
-        self._resultReady.emit(ppPlots)  # 传出ppPlots
+            ppPlots = pp()
+            self._resultReady.emit(ppPlots)  # 传出ppPlots
+
+        except Exception as e:
+            # 如果出现异常，获取异常的堆栈信息，并通过信号发送给主线程
+            error_msg = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.error_signal.emit(error_msg)
 
 
 class PhasePlanePage(SmoothScrollArea):
@@ -320,9 +329,16 @@ class PhasePlanePage(SmoothScrollArea):
             self.ui.target_variable_y_cbb.addItem(available_variables_name)
 
     def _start_phase_plane_worker(self):
+        show_info("Start phase plane analysis......Please wait......", self.window())
         self.ui.start_btn.setEnabled(False)  # 禁用按钮
 
         self.phaseplaneworker = PhasePlaneWorker()
+        self.phaseplaneworker.error_signal.connect(
+            lambda msg: show_error(msg, self.window())
+        )  # 如有报错，接收信息
+        self.phaseplaneworker.error_signal.connect(
+            lambda: self.ui.start_btn.setEnabled(True)
+        )  # 如有报错，启用开始按钮
         self.phaseplaneworker.set_phase_plane_page(self)
         self.phaseplaneworker._resultReady.connect(self.update_phaseplane)
         self.phaseplaneworker.start()
@@ -345,6 +361,7 @@ class BifurcationWorker(QThread):
 
     # 定义一个信号，用于发送处理结果
     _resultReady = pyqtSignal(BifurcationPlots)
+    error_signal = pyqtSignal(str)
     bifurcation_plots = None
 
     def set_bifurcation_page(self, bifurcation_page):
@@ -354,83 +371,89 @@ class BifurcationWorker(QThread):
         """加入按钮所需执行的分岔分析代码，得到BifurcationPlots类型的分析结果"""
 
         plt.close("all")
-        bifurcation_func = BifurcationFunc()
-        bifurcation_func.model = self.bifurcation_page._model
+        try:
+            bifurcation_func = BifurcationFunc()
+            bifurcation_func.model = self.bifurcation_page._model
 
-        dict_target_vars = {}
-        dict_target_vars[
-            self.bifurcation_page.available_variables[
-                self.bifurcation_page.ui.target_variable_x_cbb.currentIndex()
+            dict_target_vars = {}
+            dict_target_vars[
+                self.bifurcation_page.available_variables[
+                    self.bifurcation_page.ui.target_variable_x_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.bifurcation_page.ui.tvx_start_edit.text()),
+                float(self.bifurcation_page.ui.tvx_end_edit.text()),
             ]
-        ] = [
-            float(self.bifurcation_page.ui.tvx_start_edit.text()),
-            float(self.bifurcation_page.ui.tvx_end_edit.text()),
-        ]
-        dict_target_vars[
-            self.bifurcation_page.available_variables[
-                self.bifurcation_page.ui.target_variable_y_cbb.currentIndex()
+            dict_target_vars[
+                self.bifurcation_page.available_variables[
+                    self.bifurcation_page.ui.target_variable_y_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.bifurcation_page.ui.tvy_start_edit.text()),
+                float(self.bifurcation_page.ui.tvy_end_edit.text()),
             ]
-        ] = [
-            float(self.bifurcation_page.ui.tvy_start_edit.text()),
-            float(self.bifurcation_page.ui.tvy_end_edit.text()),
-        ]
 
-        bifurcation_func.target_vars = dict_target_vars
+            bifurcation_func.target_vars = dict_target_vars
 
-        fixed_var = self.bifurcation_page.available_variables[:]
-        fixed_var.remove(
-            self.bifurcation_page.available_variables[
-                self.bifurcation_page.ui.target_variable_x_cbb.currentIndex()
+            fixed_var = self.bifurcation_page.available_variables[:]
+            fixed_var.remove(
+                self.bifurcation_page.available_variables[
+                    self.bifurcation_page.ui.target_variable_x_cbb.currentIndex()
+                ]
+            )
+            fixed_var.remove(
+                self.bifurcation_page.available_variables[
+                    self.bifurcation_page.ui.target_variable_y_cbb.currentIndex()
+                ]
+            )
+            dict_fixed_var = {}
+            for fixed_var in fixed_var:
+                dict_fixed_var[fixed_var] = 0
+
+            bifurcation_func.fixed_vars = dict_fixed_var
+
+            dict_target_pars = {}
+            dict_target_pars[
+                self.bifurcation_page.parameters[
+                    self.bifurcation_page.ui.target_parameter_x_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.bifurcation_page.ui.tpx_start_edit.text()),
+                float(self.bifurcation_page.ui.tpx_end_edit.text()),
             ]
-        )
-        fixed_var.remove(
-            self.bifurcation_page.available_variables[
-                self.bifurcation_page.ui.target_variable_y_cbb.currentIndex()
+            dict_target_pars[
+                self.bifurcation_page.parameters[
+                    self.bifurcation_page.ui.target_parameter_y_cbb.currentIndex()
+                ]
+            ] = [
+                float(self.bifurcation_page.ui.tpy_start_edit.text()),
+                float(self.bifurcation_page.ui.tpy_end_edit.text()),
             ]
-        )
-        dict_fixed_var = {}
-        for fixed_var in fixed_var:
-            dict_fixed_var[fixed_var] = 0
 
-        bifurcation_func.fixed_vars = dict_fixed_var
+            bifurcation_func.target_pars = dict_target_pars
 
-        dict_target_pars = {}
-        dict_target_pars[
-            self.bifurcation_page.parameters[
-                self.bifurcation_page.ui.target_parameter_x_cbb.currentIndex()
-            ]
-        ] = [
-            float(self.bifurcation_page.ui.tpx_start_edit.text()),
-            float(self.bifurcation_page.ui.tpx_end_edit.text()),
-        ]
-        dict_target_pars[
-            self.bifurcation_page.parameters[
-                self.bifurcation_page.ui.target_parameter_y_cbb.currentIndex()
-            ]
-        ] = [
-            float(self.bifurcation_page.ui.tpy_start_edit.text()),
-            float(self.bifurcation_page.ui.tpy_end_edit.text()),
-        ]
+            dict_resolutions = {}
+            dict_resolutions[
+                self.bifurcation_page.parameters[
+                    self.bifurcation_page.ui.target_parameter_x_cbb.currentIndex()
+                ]
+            ] = float(self.bifurcation_page.ui.tpx_step_edit.text())
+            dict_resolutions[
+                self.bifurcation_page.parameters[
+                    self.bifurcation_page.ui.target_parameter_y_cbb.currentIndex()
+                ]
+            ] = float(self.bifurcation_page.ui.tpy_step_edit.text())
 
-        bifurcation_func.target_pars = dict_target_pars
+            bifurcation_func.resolutions = dict_resolutions
 
-        dict_resolutions = {}
-        dict_resolutions[
-            self.bifurcation_page.parameters[
-                self.bifurcation_page.ui.target_parameter_x_cbb.currentIndex()
-            ]
-        ] = float(self.bifurcation_page.ui.tpx_step_edit.text())
-        dict_resolutions[
-            self.bifurcation_page.parameters[
-                self.bifurcation_page.ui.target_parameter_y_cbb.currentIndex()
-            ]
-        ] = float(self.bifurcation_page.ui.tpy_step_edit.text())
+            bifurcationPlots = bifurcation_func(show=False)
 
-        bifurcation_func.resolutions = dict_resolutions
+            self._resultReady.emit(bifurcationPlots)  # 传出bifurcationPlots
 
-        bifurcationPlots = bifurcation_func(show=False)
-
-        self._resultReady.emit(bifurcationPlots)  # 传出bifurcationPlots
+        except Exception as e:
+            # 如果出现异常，获取异常的堆栈信息，并通过信号发送给主线程
+            error_msg = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.error_signal.emit(error_msg)
 
 
 class BifurcationPage(SmoothScrollArea):
@@ -503,9 +526,16 @@ class BifurcationPage(SmoothScrollArea):
         self._model = model
 
     def _start_bifurcation_worker(self):
+        show_info("Start bifurcation analysis......Please wait......", self.window())
         self.ui.start_btn.setEnabled(False)  # 禁用按钮
 
         self.bifurcation_worker = BifurcationWorker()
+        self.bifurcation_worker.error_signal.connect(
+            lambda msg: show_error(msg, self.window())
+        )  # 如有报错，接收信息
+        self.bifurcation_worker.error_signal.connect(
+            lambda: self.ui.start_btn.setEnabled(True)
+        )  # 如有报错，启用开始按钮
         self.bifurcation_worker.set_bifurcation_page(self)
         self.bifurcation_worker._resultReady.connect(self.update_bifurcation)
         self.bifurcation_worker.start()

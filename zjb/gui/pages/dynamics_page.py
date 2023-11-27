@@ -6,7 +6,7 @@ from functools import partial
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
 from PyQt5.QtWidgets import QApplication, QFormLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -133,8 +133,11 @@ class DynamicsModelInfoPage(SmoothScrollArea):
         )
 
         for ref in self._model.references:
+            ref_label = StrongBodyLabel()
+            ref_label.setTextInteractionFlags((Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard))
+            ref_label.setText(ref)
             self.main_layout.addRow(
-                StrongBodyLabel(ref),
+                ref_label,
             )
 
 

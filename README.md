@@ -44,6 +44,16 @@ pip install --no-cache-dir https://github.com/ZJBGroup/ZJB-GUI/tarball/main
 python -m zjb.gui.main
 ```
 
+使用默认的工作空间
+---
+下载资源仓库: https://github.com/ZJBGroup/ZJB-Assets
+解压ZJB-Assets/workspaces/workspace_basic.zip，并在GUI应用首页`Open Workspace`中打开此工作空间并使用.
+
+也可以通过百度网盘下载默认的工作空间：链接：https://pan.baidu.com/s/1a1teYJx4yB0B7HqsKeh4aw?pwd=ZJBW 
+
+提取码：ZJBW 
+
+
 致谢
 ---
 感谢之江实验室脑网络组图谱与类脑智能研究项目组、中国科学院自动化研究所脑网络组研究中心对本项目的大力支持！

@@ -20,13 +20,23 @@ def get_local_config_path():
 
 
 def sync_recent_config(name, path, worker_count="get", state="add"):
-    """
-    更新最近打开的工作空间的配置文件
-    :param: name: 工作空间文件名称
-    :param: path: 工作空间路径，本页面所有 path 都包含文件名自身
-    :param: worker_count: 该工作空间中Worker的数量，当取 get 时，表示调用该方法返回指定工作空间的 worker_count
-    :param: state: 取 add 的时候，表示插入一条信息，取 del 的时候，表示没找到，删除这条信息
-    :return: _worker_count: 当输入的 worker_count 为 get 的时候，返回指定工作空间的 worker_count 否则返回 None
+    """更新最近打开的工作空间的配置文件
+
+    Parameters
+    ----------
+    name : str
+        工作空间文件名称
+    path : str
+        工作空间路径，本页面所有 path 都包含文件名自身
+    worker_count : str, optional
+        该工作空间中Worker的数量，当取 get 时，表示调用该方法返回指定工作空间的 worker_count, by default "get"
+    state : str, optional
+        取 add 的时候，表示插入一条信息，取 del 的时候，表示没找到，删除这条信息, by default "add"
+
+    Returns
+    -------
+    _worker_count
+        当输入的 worker_count 为 get 的时候，返回指定工作空间的 worker_count 否则返回 None
     """
     _worker_count = worker_count
     configPath = f"{get_local_config_path()}/recent_workspace.json"

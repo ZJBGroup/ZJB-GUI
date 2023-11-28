@@ -8,9 +8,10 @@ from qfluentwidgets import (
     SmoothScrollArea,
     SubtitleLabel,
     TitleLabel,
+    ToolTipFilter,
+    ToolTipPosition,
     TransparentPushButton,
 )
-
 from zjb.main.api import (
     BOLD,
     SOLVER_DICT,
@@ -108,9 +109,13 @@ class DTBModelPage(BasePage):
                 self.model.parameters.get(parameter, dynamics.parameters[parameter])
             )
             editor.valueChanged.connect(partial(self._edit_parameter, parameter))
-            self.scrollLayout.addRow(
-                BodyLabel(expression2unicode(parameter, False) + ":"), editor
+            mylabel = BodyLabel(expression2unicode(parameter, False) + ":")
+            mylabel.installEventFilter(
+                ToolTipFilter(mylabel, 200, ToolTipPosition.LEFT)
             )
+            if dynamics.docs:
+                mylabel.setToolTip(dynamics.docs[parameter])
+            self.scrollLayout.addRow(mylabel, editor)
         self.scrollLayout.addWidget(SubtitleLabel("Simulation configuration:"))
         # solver
         solver_editor = ModelSolverEditor(self.model)

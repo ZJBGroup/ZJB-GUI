@@ -15,8 +15,9 @@ from qfluentwidgets import (
     SmoothScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
+    ToolTipFilter,
+    ToolTipPosition,
 )
-
 from zjb.main.dtb.dynamics_model import (
     BifurcationFunc,
     BifurcationPlots,
@@ -82,6 +83,8 @@ class DynamicsModelInfoPage(SmoothScrollArea):
 
         # observable_variables = self._model.observable_variables
         parameters = self._model.parameters
+        docs = self._model.docs
+        print("docs-----------------", docs)
         # expression = self._model.expression
         state_variables = self._model.state_variables
         transient_variables = self._model.transient_variables
@@ -126,7 +129,12 @@ class DynamicsModelInfoPage(SmoothScrollArea):
             editor = FloatEditor(value)
             editor.setEnabled(False)
             editor.valueChanged.connect(partial(self._update_parameter, name))
-            self.main_layout.addRow(BodyLabel(f"{expression2unicode(name)}:"), editor)
+            mylabel = BodyLabel(f"{expression2unicode(name)}:")
+            mylabel.installEventFilter(
+                ToolTipFilter(mylabel, 200, ToolTipPosition.LEFT)
+            )
+            mylabel.setToolTip(docs[name])
+            self.main_layout.addRow(mylabel, editor)
 
         self.main_layout.addRow(
             SubtitleLabel("References: "),

@@ -1,6 +1,6 @@
 # coding:utf-8
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem, QVBoxLayout
+from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem
 from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
 from qfluentwidgets.common.icon import FluentIconEngine, Icon
 from zjb.main.manager.workspace import Workspace
@@ -26,6 +26,7 @@ class DynamicModelInterface(ScrollArea):
         self.listWidget.itemClicked.connect(self._itemClicked)
 
     def setWorkspace(self, workspace: Workspace):
+        self.listWidget.clear()
         self._workspace = workspace
         for item in self._workspace.dynamics:
             dynamicsItem = QListWidgetItem(item.name)

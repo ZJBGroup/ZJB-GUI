@@ -31,6 +31,7 @@ from qfluentwidgets import (
 from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
 from zjb.gui.common.config import cfg
+from zjb.gui.pages.about_page import AboutUsInterface
 from zjb.gui.pages.base_page import BasePage
 from zjb.gui.pages.jupyter_page import JupyterPage
 from zjb.gui.pages.setting_page import SettingInterface
@@ -192,7 +193,7 @@ class MainWindow(FluentWindow):
         self.dynamicModelInterface = DynamicModelInterface(self)
         self.jobManagerInterface = JobManagerInterface(self)
         self.settingPage = SettingInterface(self)
-
+        self.aboutUsPage = AboutUsInterface(self)
         # 禁用 win11 的 Mica 特效
         self.setMicaEffectEnabled(True)
 
@@ -279,6 +280,12 @@ class MainWindow(FluentWindow):
             self.jobManagerInterface, FluentIcon.SEND, "Job Manager", pos
         )
         self.addSubInterface(
+            self.aboutUsPage,
+            FluentIcon.HEART,
+            "About Us",
+            NavigationItemPosition.BOTTOM,
+        )
+        self.addSubInterface(
             self.settingPage,
             FluentIcon.SETTING,
             "Settings",
@@ -292,7 +299,10 @@ class MainWindow(FluentWindow):
         监测点击左侧导航时，返回点击的索引数，点击设置页面的时候需要隐藏 tab 窗口区
         :param: navNum: 所点击导航的索引数
         """
-        if navNum == self.stackedWidget.count() - 1:
+        if (
+            navNum == self.stackedWidget.count() - 1
+            or navNum == self.stackedWidget.count() - 2
+        ):
             self.widgetWindows.hide()
         else:
             self.widgetWindows.show()

@@ -64,7 +64,7 @@ class DTBPage(BasePage):
         self.detail_panel = QWidget(self)
         self.detail_panel.setMinimumHeight(40)
         self.detail_panel_layout = QVBoxLayout(self.detail_panel)
-        self.detail_panel_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.detail_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.detail_panel_layout.setContentsMargins(30, 0, 0, 0)
         self.detail_panel_layout.addWidget(TitleLabel(self.dtb.name))
 
@@ -92,7 +92,7 @@ class DTBPage(BasePage):
         self.button_group = QWidget(self)
         self.button_group_layout = QHBoxLayout(self.button_group)
         self.button_group_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.button_group_layout.setContentsMargins(0, 10, 0, 0)
+        self.button_group_layout.setContentsMargins(0, 20, 0, 0)
 
         btn_simulate = PrimaryPushButton(f"Simulate")
         btn_simulate.setFixedWidth(130)

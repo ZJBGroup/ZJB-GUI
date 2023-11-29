@@ -6,7 +6,7 @@ from functools import partial
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QFormLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -84,7 +84,6 @@ class DynamicsModelInfoPage(SmoothScrollArea):
         # observable_variables = self._model.observable_variables
         parameters = self._model.parameters
         docs = self._model.docs
-        print("docs-----------------", docs)
         # expression = self._model.expression
         state_variables = self._model.state_variables
         transient_variables = self._model.transient_variables
@@ -142,7 +141,10 @@ class DynamicsModelInfoPage(SmoothScrollArea):
 
         for ref in self._model.references:
             ref_label = StrongBodyLabel()
-            ref_label.setTextInteractionFlags((Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard))
+            ref_label.setTextInteractionFlags(
+                (Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+            )
+            ref_label.setWordWrap(True)
             ref_label.setText(ref)
             self.main_layout.addRow(
                 ref_label,

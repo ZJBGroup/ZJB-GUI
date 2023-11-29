@@ -1,10 +1,11 @@
 from functools import partial
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFormLayout, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
+    IconWidget,
     SmoothScrollArea,
     SubtitleLabel,
     TitleLabel,
@@ -49,16 +50,24 @@ class DTBModelPage(BasePage):
         self.vBoxLayout = QVBoxLayout(self)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.vBoxLayout.addWidget(TitleLabel("DTB Model"))
+        # 页面信息部分
+        self.info_panel = QWidget(self)
+        self.info_panel_layout = QHBoxLayout(self.info_panel)
+        self.info_panel_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.pageicon = IconWidget(FluentIcon.IOT, self)
+        self.pageicon.setFixedSize(140, 140)
+        self.info_panel_layout.addWidget(self.pageicon)
 
-        self.formLayout = QFormLayout()
-        self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.vBoxLayout.addLayout(self.formLayout)
-
-        self.formLayout.addRow(BodyLabel("name:"), BodyLabel(self.model.name))
+        # 信息部分右侧文字及按钮部分
+        self.detail_panel = QWidget(self)
+        self.detail_panel.setMinimumHeight(40)
+        self.detail_panel_layout = QVBoxLayout(self.detail_panel)
+        self.detail_panel_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.detail_panel_layout.setContentsMargins(30, 0, 0, 0)
+        self.detail_panel_layout.addWidget(TitleLabel(self.model.name))
 
         atlas = self.model.atlas
-        btn_atlas = TransparentPushButton(atlas.name)
+        btn_atlas = TransparentPushButton(atlas.name, icon=FluentIcon.EDUCATION)
         # FIXME: workspace.subjects[0] may not exist
         btn_atlas.clicked.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit(
@@ -69,10 +78,9 @@ class DTBModelPage(BasePage):
                 ),
             )
         )
-        self.formLayout.addRow(BodyLabel("atlas:"), btn_atlas)
 
         dynamics = self.model.dynamics
-        btn_dynamics = TransparentPushButton(dynamics.name)
+        btn_dynamics = TransparentPushButton(dynamics.name, icon=FluentIcon.ROBOT)
         btn_dynamics.clicked.connect(
             lambda: GLOBAL_SIGNAL.requestAddPage.emit(
                 dynamics.name,
@@ -85,7 +93,18 @@ class DTBModelPage(BasePage):
                 ),
             )
         )
-        self.formLayout.addRow(BodyLabel("dynamics model:"), btn_dynamics)
+
+        # 数据按钮布局
+        self.detail_button_container = QWidget()
+        self.detail_button_layout = QHBoxLayout(self.detail_button_container)
+        self.detail_button_layout.setContentsMargins(0, 0, 0, 0)
+        self.detail_button_layout.addWidget(btn_atlas)
+        self.detail_button_layout.addWidget(btn_dynamics)
+        self.detail_panel_layout.addWidget(self.detail_button_container)
+
+        self.info_panel_layout.addWidget(self.detail_panel)
+        self.vBoxLayout.addWidget(self.info_panel)
+        self.vBoxLayout.addWidget(SubtitleLabel(f"Detail:"))
 
         self.scrollArea = SmoothScrollArea(self)
         self.vBoxLayout.addWidget(self.scrollArea)

@@ -28,8 +28,10 @@ from qfluentwidgets import (
     TransparentPushButton,
     isDarkTheme,
 )
+
 from zjb.gui._global import GLOBAL_SIGNAL, get_workspace
 from zjb.gui._rc import find_resource_file
+from zjb.gui.assets import download_assets
 from zjb.gui.common.config import cfg
 from zjb.gui.pages.about_page import AboutUsInterface
 from zjb.gui.pages.base_page import BasePage
@@ -344,6 +346,8 @@ class MainWindow(FluentWindow):
 
 
 if __name__ == "__main__":
+    download_assets()
+
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )

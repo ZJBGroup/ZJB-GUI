@@ -30,7 +30,7 @@ class ChooseDataDialog(MessageBoxBase):
 
     def _setup_ui(self):
         self.yesButton.setText("Close")
-        self.cancelButton.hide()
+        self.cancelButton.setText("Delete")
         self.formLayout = QFormLayout()
         self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 

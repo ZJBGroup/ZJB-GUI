@@ -11,11 +11,12 @@ from qfluentwidgets import (
     SubtitleLabel,
     TitleLabel,
 )
+
 from zjb.main.api import Project, RegionalConnectivity, RegionSpace, Subject
 
 from .._global import get_workspace
 from ..common.utils import show_error
-from ..panels.data_list_panel import DataListPanel
+from ..panels.data_dict_panel import SubjectDataDictPanel
 from ..widgets.file_editor import OpenFileEditor
 from .base_page import BasePage
 
@@ -29,7 +30,7 @@ class SubjectPage(BasePage):
         self._workspace = get_workspace()
         self._setup_ui()
 
-        self._subject.observe(self.updata_list, "data", dispatch="same")
+        self._subject.observe(self.updata_list, "data")
 
     def _setup_ui(self):
         self.vBoxLayout = QVBoxLayout(self)
@@ -69,13 +70,7 @@ class SubjectPage(BasePage):
 
         self.vBoxLayout.addWidget(SubtitleLabel(f"Data in {self._subject.name}:"))
         # 数据列表
-        self.data_list = DataListPanel(
-            "subject",
-            self._subject.data.items(),
-            self._subject,
-            self._project,
-            self,
-        )
+        self.data_list = SubjectDataDictPanel(self._subject, self._project, self)
         self.vBoxLayout.addWidget(self.data_list)
 
     def _import_connectivity(self):
@@ -91,15 +86,15 @@ class SubjectPage(BasePage):
             )
             self._subject.data |= {name: connectivity}
 
-    def updata_list(self, data):
+    def updata_list(self, event):
         """添加新的数据以后，调用方法更新数据列表
 
         Parameters:
         ----------
-        data:
-            变化后的 subject 的 data
+        event:
+            `subject.data`变化的事件
         """
-        self.data_list.sync_list(data.new)
+        self.data_list.data = event.new
 
 
 class ImportConnectivityDialog(MessageBoxBase):

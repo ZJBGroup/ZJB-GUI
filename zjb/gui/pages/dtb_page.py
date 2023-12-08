@@ -17,13 +17,14 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentPushButton,
 )
+
 from zjb.doj.job import GeneratorJob, Job, JobState
 from zjb.main.api import DTB, Project
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_error, show_success
-from ..panels.data_list_panel import DataListPanel
+from ..panels.data_dict_panel import DTBDataDictPanel
 from ..widgets.choose_data_dialog import ChooseDataDialog
 from ..widgets.dict_editor import KeySetDictEditor
 from ..widgets.editor import FloatEditor, LineEditor
@@ -105,13 +106,7 @@ class DTBPage(BasePage):
         self.button_group_layout.addWidget(btn_pse)
 
         # 数据列表
-        self.data_list = DataListPanel(
-            "dtb",
-            self.dtb.data.items(),
-            self.dtb.subject,
-            self._project,
-            self,
-        )
+        self.data_list = DTBDataDictPanel(self.dtb, self._project, self)
 
         # 添加到布局中
         self.detail_panel_layout.addWidget(self.button_group)
@@ -121,7 +116,7 @@ class DTBPage(BasePage):
         self.vBoxLayout.addWidget(self.data_list)
 
     def _sync_data(self):
-        self.data_list.sync_list(self.dtb.data)
+        self.data_list.data = self.dtb.data
 
     def _poll(self):
         _removing = []

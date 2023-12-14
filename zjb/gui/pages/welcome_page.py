@@ -1,6 +1,5 @@
 import os
 from enum import IntEnum
-from threading import Thread
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, Qt
@@ -8,12 +7,11 @@ from PyQt5.QtGui import QIcon, QMovie
 from qfluentwidgets import FluentIcon, ListWidget
 from qfluentwidgets.common.icon import FluentIconEngine, Icon
 
-from zjb.gui._rc import find_resource_file
+from zjb.gui.assets import get_asset_path
 from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
-from ..common.config_path import get_local_config_path, sync_recent_config
-from ..common.download_file import DownLoadFile
+from ..common.config_path import sync_recent_config
 from ..common.utils import show_success
 from ..common.zjb_style_sheet import myZJBStyleSheet
 from ..widgets.input_name_dialog import dialog_workspace
@@ -139,18 +137,10 @@ class WelcomePage(BasePage):
         self.gif_label.setObjectName("gif_label")
         self.top_panel_layout.addWidget(self.gif_label)
         self.vBoxLayout.addWidget(self.top_panel)
-        # self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        # 异步下载首页gif动图
-        configPath = f"{get_local_config_path()}/BNA_V2.gif"
-        down_url = "http://10.11.140.13:8000/f/45b1fd709a964665827a/?dl=1"  # BNA_V2.gif
-        downobj = DownLoadFile(down_url, configPath)
-        downobj._downLoadFinished.connect(lambda: self.load_gif(configPath))
-        t = Thread(target=downobj.download_from_url, daemon=True)
-        t.start()
-        if os.path.exists(configPath):
-            self.load_gif(configPath)
-        else:
-            self.loading()
+
+        # self.load_gif(find_resource_file("images/welcome.gif"))
+        self.load_gif(get_asset_path("images/welcome.gif"))
+
         # 操作区板块
         self.bottom_panel = QtWidgets.QWidget(self)
         self.bottom_panel.setMaximumHeight(120)
@@ -224,11 +214,3 @@ class WelcomePage(BasePage):
                 self.gif_label.setMinimumWidth(new_width)
                 self.gif_label.setMaximumHeight(int(new_width / scale))
                 self.gif_label.setMinimumHeight(int(new_width / scale))
-
-    def loading(self):
-        """gif图板块显示 加载中的 样式"""
-        self.gif_label.setText("图片加载中......")
-        self.gif_label.setAlignment(Qt.AlignCenter)
-        self.setStyleSheet(
-            "QLabel#gif_label{font: 30px 'Microsoft YaHei Light';background:rgba(0,0,0,0.6);border-radius:20;color:white}"
-        )

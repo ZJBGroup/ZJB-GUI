@@ -1,4 +1,5 @@
 import os
+from enum import IntEnum
 from threading import Thread
 
 from PyQt5 import QtWidgets
@@ -6,6 +7,8 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QMovie
 from qfluentwidgets import FluentIcon, ListWidget
 from qfluentwidgets.common.icon import FluentIconEngine, Icon
+
+from zjb.gui._rc import find_resource_file
 from zjb.main.api import Workspace
 
 from .._global import GLOBAL_SIGNAL, open_workspace
@@ -16,6 +19,11 @@ from ..common.zjb_style_sheet import myZJBStyleSheet
 from ..widgets.input_name_dialog import dialog_workspace
 from ..widgets.titlebar_button import RecentWorkspaceList
 from .base_page import BasePage
+
+
+class GifBaseSize(IntEnum):
+    WIDTH = 800
+    HEIGHT = 437
 
 
 class StartPanel(QtWidgets.QWidget):
@@ -131,6 +139,7 @@ class WelcomePage(BasePage):
         self.gif_label.setObjectName("gif_label")
         self.top_panel_layout.addWidget(self.gif_label)
         self.vBoxLayout.addWidget(self.top_panel)
+        # self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         # 异步下载首页gif动图
         configPath = f"{get_local_config_path()}/BNA_V2.gif"
         down_url = "http://10.11.140.13:8000/f/45b1fd709a964665827a/?dl=1"  # BNA_V2.gif
@@ -142,11 +151,6 @@ class WelcomePage(BasePage):
             self.load_gif(configPath)
         else:
             self.loading()
-        # 获取本机CPU核数，结合配置文件 配置默认的 Worker 数量
-        default_count = 5
-        worker_count = (
-            default_count if os.cpu_count() > default_count else os.cpu_count()
-        )
         # 操作区板块
         self.bottom_panel = QtWidgets.QWidget(self)
         self.bottom_panel.setMaximumHeight(120)
@@ -164,7 +168,9 @@ class WelcomePage(BasePage):
         self.bottom_panel_layout.addStretch(1)
         self.bottom_panel_layout.addWidget(self.bottom_right_panel_layout)
         self.bottom_panel_layout.addStretch(3)
+        self.vBoxLayout.addStretch()
         self.vBoxLayout.addWidget(self.bottom_panel)
+
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(
             self.bottom_right_panel_layout.right_panel._sync_recent_list
         )
@@ -178,11 +184,11 @@ class WelcomePage(BasePage):
         self.gif_label.setAlignment(Qt.AlignCenter)
         self.movie = QMovie(configPath)
         self.gif_label.setMovie(self.movie)
-        self.gif_label.setMaximumSize(QSize(700, 383))
+        self.gif_label.setMaximumSize(QSize(GifBaseSize.WIDTH, GifBaseSize.HEIGHT))
         self.movie.start()
         self.gif_label.setScaledContents(True)
         self.setStyleSheet(
-            "QLabel#gif_label{padding:0 30;background:rgba(0,0,0,1);border-radius:30;}"
+            "QLabel#gif_label{padding:0 30;background:rgba(0,0,0,1);border-radius:0;}"
         )
 
     def resizeEvent(self, QResizeEvent):
@@ -199,14 +205,14 @@ class WelcomePage(BasePage):
             self.scalebase["width"] = QResizeEvent.size().width() // 100
             self.scalebase["height"] = QResizeEvent.size().height() // 100
             new_width = (
-                self.scalebase["width"] * temp - 127
-                if self.scalebase["width"] * temp - 127 > 700
-                else 700
+                self.scalebase["width"] * temp
+                if self.scalebase["width"] * temp > GifBaseSize.WIDTH
+                else GifBaseSize.WIDTH
             )
             new_height = (
-                self.scalebase["height"] * temp - 211
-                if self.scalebase["height"] * temp - 211 > 383
-                else 383
+                self.scalebase["height"] * temp
+                if self.scalebase["height"] * temp > GifBaseSize.HEIGHT
+                else GifBaseSize.HEIGHT
             )
             if new_width / new_height > scale:
                 self.gif_label.setMaximumWidth(int(scale * new_height))

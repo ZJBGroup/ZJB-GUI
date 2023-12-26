@@ -4,7 +4,7 @@ from threading import Thread
 
 import requests
 from PyQt5 import QtGui
-from PyQt5.QtCore import QObject, QSize, Qt, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout
 from qfluentwidgets.components.widgets.progress_bar import ProgressBar
 from qframelesswindow import AcrylicWindow
@@ -184,16 +184,6 @@ class SplashWindow(AcrylicWindow):
             return False
 
 
-# def loadModule():
-#     def loadModuleThread():
-#         from zjb.gui.main import MainWindow
-
-#         mysignal.openSignal.emit("ok")
-
-#     load_thread = Thread(target=loadModuleThread, daemon=True)
-#     load_thread.start()
-
-
 def openMainWindow():
     from zjb.gui.main import MainWindow
 
@@ -201,14 +191,6 @@ def openMainWindow():
     w.hide()
     m.show()
     w.close()
-
-
-# class anySignal(QObject):
-#     openSignal = pyqtSignal(str)
-
-
-# mysignal = anySignal()
-# mysignal.openSignal.connect(openMainWindow)
 
 
 if __name__ == "__main__":

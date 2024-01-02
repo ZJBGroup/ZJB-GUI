@@ -150,6 +150,19 @@ class WinInterface(ScrollArea):
         close_page.deleteLater()
         self.tabBar.removeTab(index)
 
+    def _closePageByRouteKey(self, routeKey):
+        """
+        根据 routeKey 关闭指定的窗口
+        :param: routeKey: 页面的 routeKey
+        """
+        i = 0
+        for item in self.tabBar.items:
+            if item.routeKey() == routeKey:
+                break
+            i = i + 1
+
+        self._closePage(i)
+
     def _openPage(self, page: BasePage):
         """
         打开指定页面，点亮指定 Tab
@@ -203,6 +216,7 @@ class MainWindow(FluentWindow):
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
         GLOBAL_SIGNAL.requestAddPage.connect(self.addPage)
         GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
+        GLOBAL_SIGNAL.dynamicModelUpdate.connect(self.closePageByRouteKey)
         cfg.themeChanged.connect(
             lambda: self.windowicon.setIcon(
                 QIcon(find_resource_file("icon/logo_white_smaller.png"))
@@ -266,6 +280,10 @@ class MainWindow(FluentWindow):
         """
         self.widgetWindows.addPage(routeKey, callback)
 
+    def closePageByRouteKey(self, _):
+        """根据 routekey 关闭指定页面"""
+        self.widgetWindows._closePageByRouteKey("New Dynamic Model")
+
     def initNavigation(self):
         """初始化左侧导航栏"""
 
@@ -310,7 +328,6 @@ class MainWindow(FluentWindow):
 
     def setWorkspace(self, workspace: Workspace):
         self._work_space = workspace
-        self.dynamicModelInterface.setWorkspace(workspace)
 
     def setCloseFlag(self, flag: bool):
         self.closeflag = flag

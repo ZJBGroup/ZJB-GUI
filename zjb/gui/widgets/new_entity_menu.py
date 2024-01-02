@@ -4,12 +4,14 @@ import re
 
 from PyQt5.QtWidgets import QFileDialog
 from qfluentwidgets import Action, FluentIcon, RoundMenu
+
 from zjb.dos.data import Data
 from zjb.main.api import DTB, DTBModel, Project, Subject, Workspace
 
 from .._global import GLOBAL_SIGNAL, get_workspace, open_workspace
 from ..common.config_path import sync_recent_config
 from ..common.utils import show_error
+from ..pages.new_dynamics_page import NewDynamicsPage
 from .input_name_dialog import (
     DTBCreationDialog,
     DTBModelCreationDialog,
@@ -38,6 +40,9 @@ class NewEntityMenu(RoundMenu):
             FluentIcon.IOT, "New DTB Model", triggered=self._new_dtb_model
         )
         self.action_dtb = Action(FluentIcon.ALBUM, "New DTB", triggered=self._new_dtb)
+        self.action_dynamic_model = Action(
+            FluentIcon.ROBOT, "New Dynamic Model", triggered=self._new_dynamic_model
+        )
         self.action_delete = Action(
             FluentIcon.DELETE, "Delete", triggered=self._delete_entity
         )
@@ -58,6 +63,7 @@ class NewEntityMenu(RoundMenu):
             self.addAction(self.action_subject)
             self.addAction(self.action_dtb_model)
             self.addAction(self.action_dtb)
+            self.addAction(self.action_dynamic_model)
         else:
             # 从列表右键点击一个 非Project的实体
             self.addAction(self.action_delete)
@@ -75,11 +81,13 @@ class NewEntityMenu(RoundMenu):
             self.action_subject.setDisabled(True)
             self.action_dtb_model.setDisabled(True)
             self.action_dtb.setDisabled(True)
+            self.action_dynamic_model.setDisabled(True)
         else:
             self.action_project.setDisabled(False)
             self.action_subject.setDisabled(False)
             self.action_dtb_model.setDisabled(False)
             self.action_dtb.setDisabled(False)
+            self.action_dynamic_model.setDisabled(False)
 
     def _new_workspace(self):
         """点击 Workspace 按钮，新建Workspace"""
@@ -239,6 +247,13 @@ class NewEntityMenu(RoundMenu):
                 self.getTips("DTB"),
                 self._window,
             )
+
+    def _new_dynamic_model(self):
+        """点击按钮， 进入新建 dynamic model 界面"""
+        GLOBAL_SIGNAL.requestAddPage.emit(
+            "new dynamic model",
+            lambda _: NewDynamicsPage("New Dynamic Model", self._window),
+        )
 
     def _delete_entity(self):
         """删除实体"""

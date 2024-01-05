@@ -1,9 +1,6 @@
 import inspect
-from functools import partial
-
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QFormLayout,
@@ -13,6 +10,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from functools import partial
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from qfluentwidgets import (
     BodyLabel,
     CardWidget,
@@ -37,14 +36,12 @@ from zjb.main.api import (
     zjb_analysis,
     Connectivity,
 )
-
-from .._global import GLOBAL_SIGNAL, get_workspace
-from ..widgets.mpl_widget import MplWidget
-
 # from zjb.main.analysis import evaluation
 from .base_page import BasePage
 from .connectivity_page import ConnectivityPage
 from .time_series_page import RegionalTimeSeriesPage
+from .._global import GLOBAL_SIGNAL, get_workspace
+from ..widgets.mpl_widget import MplWidget
 
 
 class AnalysisPage(BasePage):
@@ -375,7 +372,7 @@ elif isinstance(_parameter.data[0], parameter_type):
                         f"""
 self.{parameter_name}_btn = TransparentPushButton('Load')
 self.{parameter_name}_btn.clicked.connect(partial(self._load_conjoint, '{parameter_name}'))
-self.{parameter_name}_edit.setText('self.{parameter_name}')   
+self.{parameter_name}_edit.setText('current data')   
 if isinstance(analysis_data, parameter_type):
     analysis_input = analysis_data
 
@@ -489,9 +486,9 @@ form_layout.addRow(self.{parameter_name}_btn)
                         if subject.data[name]._gid.str == data_load:
                             conjoint_data = subject.data[name].data
 
-
             # exec(f"self.{parameter_name}_edit.setText('{conjoint_data}')")
             exec(f"self._{parameter_name} = conjoint_data")
+            exec(f"self.{parameter_name}_edit.setText(data_load)  ")
 
         else:
             pass
@@ -581,7 +578,6 @@ class ConjointDialog(MessageBoxBase):
                 if isinstance(subject.data[name], Connectivity):
                     print(subject.data[name]._gid.str)
                     self.combox_data.addItem(subject.data[name]._gid.str)
-
 
         for analysis_result in self.project.data:
             if isinstance(analysis_result, AnalysisResult):

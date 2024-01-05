@@ -160,8 +160,8 @@ class WinInterface(ScrollArea):
             if item.routeKey() == routeKey:
                 break
             i = i + 1
-
-        self._closePage(i)
+        if i < len(self.tabBar.items):
+            self._closePage(i)
 
     def _openPage(self, page: BasePage):
         """
@@ -280,7 +280,7 @@ class MainWindow(FluentWindow):
         """
         self.widgetWindows.addPage(routeKey, callback)
 
-    def closePageByRouteKey(self, _):
+    def closePageByRouteKey(self):
         """根据 routekey 关闭指定页面"""
         self.widgetWindows._closePageByRouteKey("New Dynamic Model")
 

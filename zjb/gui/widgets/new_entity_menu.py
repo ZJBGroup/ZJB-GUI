@@ -250,9 +250,10 @@ class NewEntityMenu(RoundMenu):
 
     def _new_dynamic_model(self):
         """点击按钮， 进入新建 dynamic model 界面"""
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit()
         GLOBAL_SIGNAL.requestAddPage.emit(
-            "new dynamic model",
-            lambda _: NewDynamicsPage("New Dynamic Model", self._window),
+            "New Dynamic Model",
+            lambda _: NewDynamicsPage("New Dynamic Model", None, self._window),
         )
 
     def _delete_entity(self):

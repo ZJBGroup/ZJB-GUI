@@ -24,7 +24,7 @@ class _GlobalSignal(QObject):
     micaEnableChanged = pyqtSignal(bool)
 
     # dynamics 更新信号
-    dynamicModelUpdate = pyqtSignal(str)
+    dynamicModelUpdate = pyqtSignal([], [str])
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

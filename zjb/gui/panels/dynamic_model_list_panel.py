@@ -1,7 +1,8 @@
 # coding:utf-8
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QListWidgetItem
-from qfluentwidgets import FluentIcon, ListWidget, ScrollArea
+from qfluentwidgets import Action, FluentIcon, ListWidget, RoundMenu, ScrollArea
 from qfluentwidgets.common.icon import FluentIconEngine, Icon
 
 from zjb.main.manager.workspace import Workspace
@@ -9,6 +10,7 @@ from zjb.main.manager.workspace import Workspace
 from .._global import GLOBAL_SIGNAL
 from ..pages.base_page import BasePage
 from ..pages.dynamics_page import DynamicsInformationPage
+from ..pages.new_dynamics_page import NewDynamicsPage
 
 
 class DynamicModelInterface(ScrollArea):
@@ -17,6 +19,7 @@ class DynamicModelInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._workspace = None
+        self._window = parent
         self.listWidget = ListWidget(self)
         self.setObjectName("DynamicModelInterface")
         self.setStyleSheet("#DynamicModelInterface{background:transparent;border:none}")
@@ -25,8 +28,10 @@ class DynamicModelInterface(ScrollArea):
         self.hBoxLayout.addWidget(self.listWidget)
 
         self.listWidget.itemClicked.connect(self._itemClicked)
+        self.listWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.listWidget.customContextMenuRequested.connect(self._show_context_menu)
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
-        GLOBAL_SIGNAL.dynamicModelUpdate.connect(self.updateList)
+        GLOBAL_SIGNAL.dynamicModelUpdate[str].connect(self.updateList)
 
     def setWorkspace(self, workspace: Workspace):
         self.listWidget.clear()
@@ -41,7 +46,7 @@ class DynamicModelInterface(ScrollArea):
 
         Parameters
         ----------
-        name : dtr
+        name : str
             添加的条目名称
         """
         self.listWidget.clear()
@@ -56,6 +61,29 @@ class DynamicModelInterface(ScrollArea):
             self.listWidget.scrollToItem(_item)
             self.listWidget.setCurrentItem(_item)
             self._itemClicked(_item)
+
+    def _show_context_menu(self, pos):
+        """右键点击一个条目时，触发右键菜单"""
+        self.rightClickItem = self.listWidget.itemAt(pos)
+        self.listWidget.setCurrentItem(self.rightClickItem)
+        rightMenu = RoundMenu()
+        copy_action = Action(
+            FluentIcon.COPY,
+            "Copy",
+            triggered=self.copy_dynamic,
+        )
+        rightMenu.addAction(copy_action)
+        rightMenu.exec(self.listWidget.mapToGlobal(pos))
+
+    def copy_dynamic(self):
+        """右键复制 dynamic model"""
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit()
+        GLOBAL_SIGNAL.requestAddPage.emit(
+            "New Dynamic Model",
+            lambda _: NewDynamicsPage(
+                "New Dynamic Model", self.listWidget.currentItem().text(), self._window
+            ),
+        )
 
     def _itemClicked(self, item: QListWidgetItem):
         for dynamicsModel in self._workspace.dynamics:

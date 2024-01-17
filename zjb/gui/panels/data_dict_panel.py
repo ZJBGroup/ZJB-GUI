@@ -4,35 +4,24 @@ from typing import TYPE_CHECKING, Any
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import (
-    Action,
-    BodyLabel,
-    CardWidget,
-    FlowLayout,
-    FluentIcon,
-    IconWidget,
-    RoundMenu,
-    SmoothScrollArea,
-)
-
+from qfluentwidgets import (Action, BodyLabel, CardWidget, FlowLayout,
+                            FluentIcon, IconWidget, RoundMenu,
+                            SmoothScrollArea)
 from zjb.dos import Data
-from zjb.main.api import (
-    DTB,
-    Connectivity,
-    Project,
-    PSEResult,
-    SimulationResult,
-    Subject,
-    Surface,
-)
+from zjb.main.api import (DTB, Connectivity, Project, PSEResult,
+                          RegionalTimeSeries, SimulationResult, Subject,
+                          Surface)
+from zjb.main.data.series import MNEsimSeries
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
 from ..pages.analysis_page import AnalysisPage
 from ..pages.connectivity_page import ConnectivityPage
+from ..pages.mne_page import RawArrayPage
 from ..pages.surface_page import SurfacePage
 from ..pages.time_series_page import RegionalTimeSeriesPage
 from ..widgets.choose_data_dialog import ChooseDataDialog
+from ..widgets.extract_data_dialog import PSEDataDialog, SimulationResultDialog
 
 if TYPE_CHECKING:
     from ..pages.dtb_page import DTBPage
@@ -173,11 +162,48 @@ class DTBDataDictPanel(DataDictPanel):
         self._project = project
         self._page = parent
 
-    def _show_data_dialog(self, name: str, item: "SimulationResult | PSEResult"):
+    def _show_data_dialog(
+        self, name: str, item: "SimulationResult | PSEResult | MNEsimSeries"
+    ):
         # 在Panel中启动对话框可以避免Item被销毁可能导致的问题
-        dialog = ChooseDataDialog(item, self._project, self._page)
-        dialog.rejected.connect(partial(self._delete_item, name, item))
-        dialog.show()
+        # dialog = ChooseDataDialog(item, self._project, self._page)
+
+        _getdata = item
+        if isinstance(_getdata, PSEResult):
+            pse_data_dialog = PSEDataDialog(item, "PSE data", self._page)
+            pse_data_dialog.cancelButton.setText("Delete")
+            pse_data_dialog.rejected.connect(partial(self._delete_item, name, item))
+            pse_data_dialog.exec()
+            if pse_data_dialog.getflag() == "canel":
+                _getdata = "canel"
+            else:
+                _getdata = pse_data_dialog.get_data()
+
+            if _getdata == "canel":
+                return
+
+        if isinstance(_getdata, SimulationResult):
+            simulation_result_dialog = SimulationResultDialog(
+                _getdata, "Simulation data", self._dtb, "a", self
+            )
+            simulation_result_dialog.cancelButton.setText("Delete")
+
+            simulation_result_dialog.rejected.connect(
+                partial(self._delete_item, name, item)
+            )
+            simulation_result_dialog.exec()
+
+            if simulation_result_dialog.getflag() == "canel":
+                _getdata = "canel"
+            else:
+                _getdata = simulation_result_dialog.get_timeseries_data()
+        else:
+            return
+
+        if isinstance(_getdata, RegionalTimeSeries):
+            dialog = ChooseDataDialog(_getdata, self._project, self._page)
+            dialog.rejected.connect(partial(self._delete_item, name, item))
+            dialog.show()
 
     def _delete_item(self, name: str, item: Any):
         """删除数据字典中的项目
@@ -209,7 +235,14 @@ class DTBDataDictPanel(DataDictPanel):
             widget = DataItem(name, item, FluentIcon.DICTIONARY, self)
             widget.clicked.connect(partial(self._show_data_dialog, name, item))
             return widget
+        if isinstance(item, MNEsimSeries):
+            widget = DataItem(name, item, FluentIcon.DOCUMENT, self)
+            widget.clicked.connect(lambda: self._clicked_mne(item))
+            return widget
         return super()._widget_for_item(name, item)
+
+    def _clicked_mne(self, item):
+        GLOBAL_SIGNAL.requestAddPage.emit(item._gid.str, lambda _: RawArrayPage(item))
 
 
 class SubjectDataDictPanel(DataDictPanel):

@@ -1,6 +1,6 @@
 import inspect
+
 import matplotlib.pyplot as plt
-import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QFormLayout,
@@ -9,21 +9,19 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QVBoxLayout,
     QWidget,
+    QFileDialog,
 )
-from functools import partial
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from qfluentwidgets import (
     BodyLabel,
     CardWidget,
     ComboBox,
-    Dialog,
     FluentIcon,
     LineEdit,
     MessageBoxBase,
     PrimaryPushButton,
     SmoothScrollArea,
     TitleLabel,
-    TransparentDropDownPushButton,
     TransparentPushButton,
 )
 
@@ -31,17 +29,21 @@ from zjb.main.api import (
     AnalysisResult,
     RegionalConnectivity,
     RegionalTimeSeries,
-    SpaceSeries,
-    TimeSeries,
     zjb_analysis,
-    Connectivity,
+    PSEResult,
+    SimulationResult,
 )
 # from zjb.main.analysis import evaluation
 from .base_page import BasePage
 from .connectivity_page import ConnectivityPage
 from .time_series_page import RegionalTimeSeriesPage
 from .._global import GLOBAL_SIGNAL, get_workspace
+from ..widgets.extract_data_dialog import PSEDataDialog, SimulationResultDialog
+from ..widgets.extract_data_dialog import SelectData
 from ..widgets.mpl_widget import MplWidget
+
+# 导入exec中使用的函数，避免优化导入自动删除
+exec("from functools import partial")
 
 
 class AnalysisPage(BasePage):
@@ -197,6 +199,7 @@ class AnalysisPage(BasePage):
                     exec(
                         f"args.append(parameter_type(self.{parameter_name}_edit.text()))"
                     )
+
                     # if parameter_type == float:
                     #     exec(f"args.append(float(self.{parameter_name}_edit.text()))")
                     # elif parameter_type == str:
@@ -339,6 +342,11 @@ elif isinstance(_parameter.data[0], parameter_type):
             btn_save = TransparentPushButton("Save analysis result")
             btn_save.clicked.connect(lambda: self._save_analysises(analysises))
             vBoxLayout_result.addWidget(btn_save)
+
+            # btn_bind_dtb = TransparentPushButton("Save analysis result")
+            # btn_bind_dtb.clicked.connect(lambda: self._bind_dtb(analysises))
+            # vBoxLayout_result.addWidget(btn_bind_dtb)
+
             vBoxLayout_2.addLayout(vBoxLayout_result)
 
         def _on_cb_analysis_changed(analysis_data):
@@ -363,10 +371,29 @@ elif isinstance(_parameter.data[0], parameter_type):
                 parameter_name = parameter.name
                 parameter_type = parameter.annotation
                 label = BodyLabel(f"{parameter_name}:")
-                exec(f"self.{parameter_name}_edit = LineEdit()")
+                exec(
+                    f"""
+self.{parameter_name}_edit = LineEdit()
+self.{parameter_name}_edit.setMinimumWidth(350)
+                    """
+                )
                 if parameter.default is not inspect._empty:
-                    exec(f"self.{parameter_name}_edit.setText(str(parameter.default))")
-                    exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
+                    if parameter.default == "Path":
+                        exec(
+                            f"""
+self.{parameter_name}_edit.setText(str(parameter.default))
+self.{parameter_name}_sf_btn = TransparentPushButton('select file')
+self.{parameter_name}_sf_btn.clicked.connect(partial(self._select_file, self.{parameter_name}_edit))
+form_layout.addRow(label, self.{parameter_name}_edit)
+form_layout.addRow(self.{parameter_name}_sf_btn)
+                            """
+                        )
+                        pass
+                    else:
+                        exec(
+                            f"self.{parameter_name}_edit.setText(str(parameter.default))"
+                        )
+                        exec(f"form_layout.addRow(label, self.{parameter_name}_edit)")
                 else:
                     exec(
                         f"""
@@ -382,7 +409,7 @@ self._{parameter_name} = analysis_input
 self.{parameter_name}_edit.setEnabled(False)            
 form_layout.addRow(label, self.{parameter_name}_edit)
 form_layout.addRow(self.{parameter_name}_btn)
-                    """,
+                        """,
                     )
                     # exec(f"self.{parameter_name}_btn = TransparentPushButton('Load')")
                     # exec(f"self.{parameter_name}_btn.clicked.connect(lambda: self._load_conjoint(parameter_name))")
@@ -466,32 +493,86 @@ form_layout.addRow(self.{parameter_name}_btn)
 
     def _load_conjoint(self, parameter_name):
         print(parameter_name)
-        dialog = ConjointDialog(self.project, self)
-        if dialog.exec():
-            data_load = dialog.combox_data.currentText()
-            for dtb in self.project.dtbs:
-                for simulation_result in dtb.data:
-                    for data in dtb.data[simulation_result].data:
-                        if data._gid.str == data_load:
-                            conjoint_data = data
+        # dialog = EntityCreationBase("aaa", "a", self.project, self)
+        dialog = SelectData("Select Data", "a", self.project, self)
+        _getdata = False
+        dialog.exec()
+        if dialog.getflag() == "canel":
+            _getdata = "canel"
+        else:
+            _getdata = dialog.get_data()
+            _get_subject_or_dtb = dialog.get_subject_or_dtb()
 
-            for data in self.project.data:
-                if isinstance(data, AnalysisResult):
-                    if data.name == data_load:
-                        conjoint_data = data.data
+        if _getdata == "canel":
+            return
+        elif isinstance(_getdata, PSEResult):
+            pse_data_dialog = PSEDataDialog(_getdata, "PSE data", self)
+            pse_data_dialog.exec()
 
-            for subject in self.project.subjects:
-                for name in subject.data:
-                    if isinstance(subject.data[name], Connectivity):
-                        if subject.data[name]._gid.str == data_load:
-                            conjoint_data = subject.data[name].data
+            if pse_data_dialog.getflag() == "canel":
+                _getdata = "canel"
+            else:
+                _getdata = pse_data_dialog.get_data()
+
+            if _getdata == "canel":
+                return
+
+        if isinstance(_getdata, SimulationResult):
+            simulation_result_dialog = SimulationResultDialog(
+                _getdata, "PSE data", _get_subject_or_dtb, "a", self
+            )
+            simulation_result_dialog.exec()
+
+            if simulation_result_dialog.getflag() == "canel":
+                _getdata = "canel"
+            else:
+                _getdata = simulation_result_dialog.get_timeseries_data()
+
+            # if dialog.exec():
+            #     data_load = dialog.combox_data.currentText()
+            #     for dtb in self.project.dtbs:
+            #         for simulation_result in dtb.data:
+            #             for data in dtb.data[simulation_result].data:
+            #                 if data._gid.str == data_load:
+            #                     conjoint_data = data
+            #
+            #     for data in self.project.data:
+            #         if isinstance(data, AnalysisResult):
+            #             if data.name == data_load:
+            #                 conjoint_data = data.data
+            #
+            #     # for subject in self.project.subjects:
+            #     #     for name in subject.data:
+            #     #         if isinstance(subject.data[name], Connectivity):
+            #     #             if subject.data[name]._gid.str == data_load:
+            #     #                 conjoint_data = subject.data[name].data
+            #
+            #     for subject in self.project.subjects:
+            #         for item in subject.data.items():
+            #             if item[0] == data_load:
+            #                 conjoint_data = item[1]
+            #
+            #     for subject in self.project.parent.subjects:
+            #         for item in subject.data.items():
+            #             if item[0] == data_load:
+            #                 conjoint_data = item[1]
 
             # exec(f"self.{parameter_name}_edit.setText('{conjoint_data}')")
-            exec(f"self._{parameter_name} = conjoint_data")
-            exec(f"self.{parameter_name}_edit.setText(data_load)  ")
+            # conjoint_data = _getdata
+            exec(f"self._{parameter_name} = _getdata")
+            exec(f"self.{parameter_name}_edit.setText(str(_getdata))  ")
 
         else:
             pass
+
+    def _select_file(self, lineedit):
+        window = QWidget()
+        file_path, _ = QFileDialog.getOpenFileName(
+            window, "select file", "./", "All Files (*)"
+        )
+
+        if file_path:
+            lineedit.setText(file_path)
 
 
 class CompareDialog(MessageBoxBase):
@@ -571,13 +652,26 @@ class ConjointDialog(MessageBoxBase):
                 for data in dtb.data[simulation_result].data:
                     self.combox_data.addItem(data._gid.str)
 
+        # for dtb in self.project.dtbs:
+        #     for item in dtb.data.items():
+        #         for data in item[1]:
+        #             self.combox_data.addItem(data._gid.str)
+
+        # for subject in self.project.subjects:
+        #     for name in subject.data:
+        #         print(name)
+        #         print(subject.data[name])
+        #         if isinstance(subject.data[name], Connectivity):
+        #             print(subject.data[name]._gid.str)
+        #             self.combox_data.addItem(subject.data[name]._gid.str)
+
         for subject in self.project.subjects:
-            for name in subject.data:
-                print(name)
-                print(subject.data[name])
-                if isinstance(subject.data[name], Connectivity):
-                    print(subject.data[name]._gid.str)
-                    self.combox_data.addItem(subject.data[name]._gid.str)
+            for item in subject.data.items():
+                self.combox_data.addItem(item[0])
+
+        for subject in self.project.parent.subjects:
+            for item in subject.data.items():
+                self.combox_data.addItem(item[0])
 
         for analysis_result in self.project.data:
             if isinstance(analysis_result, AnalysisResult):
@@ -586,3 +680,68 @@ class ConjointDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.combox_data)
 
         # self.cancelButton.hide()
+
+
+# class SelectData(EntityCreationBase):
+#     """选择数据"""
+#
+#     def __init__(self, title: str, type="", project: Project = None, parent=None):
+#         super().__init__(title=title, type=type, project=project, parent=parent)
+#
+#         # 隐藏不需要的命名框
+#         self.viewLayout.removeWidget(self.lineEdit)
+#         self.lineEdit.hide()
+#
+#         # 所选项目中被试及dtb类目的下拉菜单
+#         subject_and_dtb_list = []
+#         subject_select_list = []
+#         dtb_select_list = []
+#
+#         if project == None:
+#             subject_select_list = get_workspace().available_subjects()
+#             dtb_select_list = get_workspace().available_dtbs()
+#         else:
+#             subject_select_list = project.available_subjects()
+#             dtb_select_list = project.available_dtbs()
+#         subject_and_dtb_list = subject_select_list + dtb_select_list
+#
+#         self.subject_and_dtb_selector = SelectWidget(
+#             "Subject and Dtb", dataList=subject_and_dtb_list
+#         )
+#
+#         # data 下拉菜单
+#         data_select_list = []
+#         self.data_selector = SelectWidget("data", dataList=data_select_list)
+#         default_instance = self.subject_and_dtb_selector.getCurrentValue()
+#         if not default_instance == None:
+#             self._on_instance_list_changed(default_instance)
+#
+#         self.viewLayout.addWidget(self.subject_and_dtb_selector)
+#         self.viewLayout.addWidget(self.data_selector)
+#
+#         # 表单动态联动
+#         self.project_selector.selectedDateChanged.connect(self._on_project_list_changed)
+#         self.subject_and_dtb_selector.selectedDateChanged.connect(
+#             self._on_instance_list_changed
+#         )
+#
+#     def _on_project_list_changed(self, project: Project):
+#         """选择不同的项目时，subject_and_dtb列表发生改变"""
+#         self.subject_and_dtb_selector.updateSelectList(
+#             project.available_subjects() + project.available_dtbs()
+#         )
+#
+#     def _on_instance_list_changed(self, instance: Subject or DTB or Project):
+#         """选择不同的被试或数字孪生脑时，data列表发生改变"""
+#         data_items = []
+#         for key, value in instance.data.items():
+#             _item = {"name": key, "value": value}
+#             data_items.append(_item)
+#
+#         # selected_project = self.project_selector.getCurrentValue()
+#         # for key, value in selected_project.data.items():
+#         #     _item = {"name": key, "value": value}
+#         #     data_items.append(_item)
+#         # data_items += selected_project.data
+#
+#         self.data_selector.updateSelectList(data_items)

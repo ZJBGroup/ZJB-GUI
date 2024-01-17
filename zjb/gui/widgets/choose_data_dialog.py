@@ -1,20 +1,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QWidget
-from qfluentwidgets import (
-    BodyLabel,
-    CaptionLabel,
-    ComboBox,
-    Dialog,
-    LineEdit,
-    MessageBoxBase,
-    PrimaryPushButton,
-    PushButton,
-    SmoothScrollArea,
-    TitleLabel,
-    TransparentPushButton,
-)
-
-from zjb.main.api import PSEResult, SimulationResult
+from qfluentwidgets import (MessageBoxBase, SmoothScrollArea, TitleLabel,
+                            TransparentPushButton)
+from zjb.main.api import PSEResult, RegionalTimeSeries, SimulationResult
 
 from ..panels.data_operation_panel import DataOperationPanel
 
@@ -34,15 +22,16 @@ class ChooseDataDialog(MessageBoxBase):
         self.formLayout = QFormLayout()
         self.formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        self.formLayout.addRow(TitleLabel("Parameters:"))
-
-        for parameter in self.data.parameters:
-            btn_parameter = TransparentPushButton(f"{self.data.parameters[parameter]}")
-            self.formLayout.addRow(BodyLabel(parameter), btn_parameter)
+        # self.formLayout.addRow(TitleLabel("Parameters:"))
+        #
+        # for parameter in self.data.parameters:
+        #     btn_parameter = TransparentPushButton(f"{self.data.parameters[parameter]}")
+        #     self.formLayout.addRow(BodyLabel(parameter), btn_parameter)
 
         self.formLayout.addRow(TitleLabel("Data:"))
 
         self.scrollArea = SmoothScrollArea(self)
+        self.scrollArea.setMinimumSize(750, 100)
 
         self.formLayout.addRow(self.scrollArea)
         self.scrollArea.setWidgetResizable(True)
@@ -67,6 +56,12 @@ class ChooseDataDialog(MessageBoxBase):
         elif isinstance(self.data, PSEResult):
             for data in self.data.data:
                 _create_data_button(data._gid.str, data)
+
+        elif isinstance(self.data, RegionalTimeSeries):
+            data_manipulation_panel = DataOperationPanel(
+                str(self.data), self.data, self.project
+            )
+            self.scrollLayout.addRow(data_manipulation_panel)
 
         self.viewLayout.addLayout(self.formLayout)
 

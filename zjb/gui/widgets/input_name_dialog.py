@@ -2,13 +2,8 @@ import re
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
-from qfluentwidgets import (
-    CaptionLabel,
-    ComboBox,
-    LineEdit,
-    MessageBoxBase,
-    SubtitleLabel,
-)
+from qfluentwidgets import (CaptionLabel, ComboBox, LineEdit, MessageBoxBase,
+                            SubtitleLabel)
 from zjb.main.api import Project, SpaceCorrelation, Subject
 
 from .._global import get_workspace
@@ -64,7 +59,10 @@ class SelectWidget(QWidget):
         self._comboBox = ComboBox(self)
         self.items = dataList
         for item in self.items:
-            self._comboBox.addItem(item.name, userData=item)
+            if hasattr(item, "name"):
+                self._comboBox.addItem(item.name, userData=item)
+            else:
+                self._comboBox.addItem(str(item), userData=item)
         self._comboBox.setCurrentIndex(0)
         self.layout = QHBoxLayout(self)
         self.layout.addWidget(self.selectlabel)
@@ -86,6 +84,8 @@ class SelectWidget(QWidget):
         for item in datelist:
             if isinstance(item, dict):
                 self._comboBox.addItem(item["name"], userData=item["value"])
+            elif not hasattr(item, "name"):
+                self._comboBox.addItem(str(item), userData=item)
             else:
                 self._comboBox.addItem(item.name, userData=item)
         if len(datelist) > 0:

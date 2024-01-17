@@ -1,21 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QWidget
-from qfluentwidgets import (
-    BodyLabel,
-    MessageBoxBase,
-    PrimaryPushButton,
-    SmoothScrollArea,
-    TitleLabel,
-    TransparentPushButton,
-)
-
-from zjb.main.api import (
-    AnalysisResult,
-    Connectivity,
-    RegionalTimeSeries,
-    SimulationResult,
-    Surface,
-)
+from qfluentwidgets import (BodyLabel, MessageBoxBase, SmoothScrollArea,
+                            TitleLabel, TransparentPushButton)
+from zjb.main.api import (AnalysisResult, Connectivity, RegionalTimeSeries,
+                          SimulationResult, Surface)
 
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..pages.analysis_page import AnalysisPage
@@ -81,11 +69,10 @@ class DataOperationPanel(QWidget):
             )
 
         elif isinstance(self.data, RegionalTimeSeries):
-
             if self.data.space.atlas.name == "AAL90":
                 for subject in self._workspace.subjects:
-                        if subject.name == "cortex_80k":
-                            self.subject = subject
+                    if subject.name == "cortex_80k":
+                        self.subject = subject
 
             GLOBAL_SIGNAL.requestAddPage.emit(
                 self.data._gid.str,
@@ -127,7 +114,7 @@ class ChooseAnalysisDialog(MessageBoxBase):
 
         for data in self.project.data:
             if self.data in data.origin:
-                btn_existe = self._create_data_button(data._gid.str, data)
+                btn_existe = self._create_data_button(data.name, data)
                 self.scrollLayout.addRow(btn_existe)
 
         btn_add_new_analysis = TransparentPushButton("New Analysis")

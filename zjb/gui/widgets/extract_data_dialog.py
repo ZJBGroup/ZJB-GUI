@@ -1,11 +1,17 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QWidget
-from qfluentwidgets import (BodyLabel, MessageBoxBase, SmoothScrollArea,
-                            SubtitleLabel, TitleLabel, TransparentPushButton)
-from zjb.main.api import DTB, Project, Subject
+from qfluentwidgets import (
+    BodyLabel,
+    MessageBoxBase,
+    SmoothScrollArea,
+    SubtitleLabel,
+    TitleLabel,
+    TransparentPushButton,
+)
 
-from .._global import get_workspace
+from zjb.main.api import DTB, Project, Subject
 from .input_name_dialog import EntityCreationBase, SelectWidget
+from .._global import get_workspace
 
 
 class SelectData(EntityCreationBase):
@@ -191,12 +197,11 @@ class PSEDataDialog(MessageBoxBase):
 class SimulationResultDialog(MessageBoxBase):
     """打开SimulationResult数据后用于选择其中仿真结果的窗口"""
 
-    def __init__(self, data, title: str, dtb: DTB = None, type="", parent=None):
+    def __init__(self, data, title: str, dtb: DTB = None, parent=None):
         super().__init__(parent=parent)
         self.dtb = dtb
         self.data = data
         self.flag = ""
-        self._type = type
         self.title = title
 
         self._setup_ui()
@@ -258,7 +263,7 @@ class SimulationResultDialog(MessageBoxBase):
             "Simulation Result", dataList=timeseries_list
         )
 
-        self._on_timeseries_list_changed()
+        self._on_monitor_type_selector_changed()
 
         # 添加到布局
         self.scrollLayout.addRow(self.monitor_type_selector)
@@ -286,7 +291,7 @@ class SimulationResultDialog(MessageBoxBase):
         self.timeseries_selector.updateSelectList(timeseries_list)
 
     def _on_monitor_type_selector_changed(self):
-        """pass"""
+        """改变监视器类型的选项时，对应变量及时间序列列表发生改变"""
         index = 0
         variable_list = []
         for monitor in self.dtb.model.monitors:

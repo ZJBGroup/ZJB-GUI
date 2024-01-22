@@ -494,7 +494,7 @@ form_layout.addRow(self.{parameter_name}_btn)
     def _load_conjoint(self, parameter_name):
         print(parameter_name)
         # dialog = EntityCreationBase("aaa", "a", self.project, self)
-        dialog = SelectData("Select Data", "a", self.project, self)
+        dialog = SelectData("Select Data", "", self.project, self)
         _getdata = False
         dialog.exec()
         if dialog.getflag() == "canel":
@@ -519,7 +519,7 @@ form_layout.addRow(self.{parameter_name}_btn)
 
         if isinstance(_getdata, SimulationResult):
             simulation_result_dialog = SimulationResultDialog(
-                _getdata, "PSE data", _get_subject_or_dtb, "a", self
+                _getdata, "Simulation data", _get_subject_or_dtb, self
             )
             simulation_result_dialog.exec()
 

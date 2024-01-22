@@ -4,15 +4,29 @@ from typing import TYPE_CHECKING, Any
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import (Action, BodyLabel, CardWidget, FlowLayout,
-                            FluentIcon, IconWidget, RoundMenu,
-                            SmoothScrollArea)
-from zjb.dos import Data
-from zjb.main.api import (DTB, Connectivity, Project, PSEResult,
-                          RegionalTimeSeries, SimulationResult, Subject,
-                          Surface)
-from zjb.main.data.series import MNEsimSeries
+from qfluentwidgets import (
+    Action,
+    BodyLabel,
+    CardWidget,
+    FlowLayout,
+    FluentIcon,
+    IconWidget,
+    RoundMenu,
+    SmoothScrollArea,
+)
 
+from zjb.dos import Data
+from zjb.main.api import (
+    DTB,
+    Connectivity,
+    Project,
+    PSEResult,
+    RegionalTimeSeries,
+    SimulationResult,
+    Subject,
+    Surface,
+)
+from zjb.main.data.series import MNEsimSeries
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..common.utils import show_success
 from ..pages.analysis_page import AnalysisPage
@@ -184,7 +198,7 @@ class DTBDataDictPanel(DataDictPanel):
 
         if isinstance(_getdata, SimulationResult):
             simulation_result_dialog = SimulationResultDialog(
-                _getdata, "Simulation data", self._dtb, "a", self
+                _getdata, "Simulation data", self._dtb, self
             )
             simulation_result_dialog.cancelButton.setText("Delete")
 

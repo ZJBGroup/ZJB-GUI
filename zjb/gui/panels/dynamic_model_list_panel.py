@@ -41,7 +41,7 @@ class DynamicModelInterface(ScrollArea):
             dynamicsItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.ROBOT))))
             self.listWidget.addItem(dynamicsItem)
 
-    def updateList(self, name):
+    def updateList(self, name=None):
         """列表发生变化的时候进行更新
 
         Parameters
@@ -72,18 +72,38 @@ class DynamicModelInterface(ScrollArea):
             "Copy",
             triggered=self.copy_dynamic,
         )
+        delete_action = Action(
+            FluentIcon.DELETE,
+            "Delete",
+            triggered=self.delete_dynamic,
+        )
         rightMenu.addAction(copy_action)
+        rightMenu.addAction(delete_action)
         rightMenu.exec(self.listWidget.mapToGlobal(pos))
 
     def copy_dynamic(self):
         """右键复制 dynamic model"""
-        GLOBAL_SIGNAL.dynamicModelUpdate.emit()
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit()  # 先关掉已打开的编辑页面
         GLOBAL_SIGNAL.requestAddPage.emit(
             "New Dynamic Model",
             lambda _: NewDynamicsPage(
                 "New Dynamic Model", self.listWidget.currentItem().text(), self._window
             ),
         )
+
+    def delete_dynamic(self):
+        """右键删除 dynamic model"""
+        # GLOBAL_SIGNAL.dynamicModelUpdate.emit()
+        model_name = self.listWidget.currentItem().text()
+        for dynamicsModel in self._workspace.dynamics:
+            if dynamicsModel.name == model_name:
+                self.select_dynamicsModel = dynamicsModel
+                print("self.select_dynamicsModel", self.select_dynamicsModel)
+                break
+        _dynamics = self._workspace.dynamics
+        _dynamics.remove(self.select_dynamicsModel)
+        self._workspace.dynamics = _dynamics
+        self.updateList()
 
     def _itemClicked(self, item: QListWidgetItem):
         for dynamicsModel in self._workspace.dynamics:

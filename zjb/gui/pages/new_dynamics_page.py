@@ -196,8 +196,7 @@ class NewDynamicsPage(BasePage):
         )
         self._workspace.dynamics += [mew_model]
         show_success(f"Successfully created model:{model_dict['name']}", self._window)
-        GLOBAL_SIGNAL.dynamicModelUpdate[str].emit(model_dict["name"])
-        GLOBAL_SIGNAL.dynamicModelUpdate.emit()
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit(model_dict["name"], "create")
 
     def get_format_date(self, data, type=None) -> dict:
         """将表单收到的 state_variables coupling_variables

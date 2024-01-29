@@ -31,7 +31,7 @@ class DynamicModelInterface(ScrollArea):
         self.listWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.listWidget.customContextMenuRequested.connect(self._show_context_menu)
         GLOBAL_SIGNAL.workspaceChanged[Workspace].connect(self.setWorkspace)
-        GLOBAL_SIGNAL.dynamicModelUpdate[str].connect(self.updateList)
+        GLOBAL_SIGNAL.dynamicModelUpdate.connect(self.updateList)  # 删除和添加的时候刷新列表
 
     def setWorkspace(self, workspace: Workspace):
         self.listWidget.clear()
@@ -41,7 +41,7 @@ class DynamicModelInterface(ScrollArea):
             dynamicsItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.ROBOT))))
             self.listWidget.addItem(dynamicsItem)
 
-    def updateList(self, name=None):
+    def updateList(self, name="", type=""):
         """列表发生变化的时候进行更新
 
         Parameters
@@ -49,18 +49,19 @@ class DynamicModelInterface(ScrollArea):
         name : str
             添加的条目名称
         """
-        self.listWidget.clear()
-        _item = None
-        for item in self._workspace.dynamics:
-            dynamicsItem = QListWidgetItem(item.name)
-            dynamicsItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.ROBOT))))
-            self.listWidget.addItem(dynamicsItem)
-            if name == item.name:
-                _item = dynamicsItem
-        if not _item == None:
-            self.listWidget.scrollToItem(_item)
-            self.listWidget.setCurrentItem(_item)
-            self._itemClicked(_item)
+        if type == "delete" or type == "create":
+            self.listWidget.clear()
+            _item = None
+            for item in self._workspace.dynamics:
+                dynamicsItem = QListWidgetItem(item.name)
+                dynamicsItem.setIcon(QIcon(FluentIconEngine(Icon(FluentIcon.ROBOT))))
+                self.listWidget.addItem(dynamicsItem)
+                if name == item.name:
+                    _item = dynamicsItem
+            if not _item == None:
+                self.listWidget.scrollToItem(_item)
+                self.listWidget.setCurrentItem(_item)
+                self._itemClicked(_item)
 
     def _show_context_menu(self, pos):
         """右键点击一个条目时，触发右键菜单"""
@@ -83,7 +84,9 @@ class DynamicModelInterface(ScrollArea):
 
     def copy_dynamic(self):
         """右键复制 dynamic model"""
-        GLOBAL_SIGNAL.dynamicModelUpdate.emit()  # 先关掉已打开的编辑页面
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit(
+            "New Dynamic Model", "copy"
+        )  # 先关掉已打开的编辑页面
         GLOBAL_SIGNAL.requestAddPage.emit(
             "New Dynamic Model",
             lambda _: NewDynamicsPage(
@@ -93,17 +96,16 @@ class DynamicModelInterface(ScrollArea):
 
     def delete_dynamic(self):
         """右键删除 dynamic model"""
-        # GLOBAL_SIGNAL.dynamicModelUpdate.emit()
         model_name = self.listWidget.currentItem().text()
         for dynamicsModel in self._workspace.dynamics:
             if dynamicsModel.name == model_name:
                 self.select_dynamicsModel = dynamicsModel
-                print("self.select_dynamicsModel", self.select_dynamicsModel)
                 break
         _dynamics = self._workspace.dynamics
         _dynamics.remove(self.select_dynamicsModel)
         self._workspace.dynamics = _dynamics
-        self.updateList()
+        GLOBAL_SIGNAL.dynamicModelUpdate.emit(model_name, "delete")
+        # self.updateList()
 
     def _itemClicked(self, item: QListWidgetItem):
         for dynamicsModel in self._workspace.dynamics:

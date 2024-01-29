@@ -23,8 +23,8 @@ class _GlobalSignal(QObject):
     # mica 效果切换信号·
     micaEnableChanged = pyqtSignal(bool)
 
-    # dynamics 更新信号
-    dynamicModelUpdate = pyqtSignal([], [str])
+    # dynamics 更新信号 第一个routekey 第二个为type
+    dynamicModelUpdate = pyqtSignal(str, str)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

@@ -280,9 +280,22 @@ class MainWindow(FluentWindow):
         """
         self.widgetWindows.addPage(routeKey, callback)
 
-    def closePageByRouteKey(self):
-        """根据 routekey 关闭指定页面"""
-        self.widgetWindows._closePageByRouteKey("New Dynamic Model")
+    def closePageByRouteKey(self, pageRouteKey, type):
+        """根据类型选择需要关闭的页面
+
+        Parameters
+        ----------
+        pageRouteKey : str
+            需要关闭的页面
+        type : str
+            create: 直接关闭 编辑页面, 此时的 pageRouteKey 为需要打开的详情页
+            delete: 关闭 pageRouteKey 详情页
+            copy: 直接关闭 编辑页面, 此时的 pageRouteKey 为"New Dynamic Model"
+        """
+        if type == "create":
+            self.widgetWindows._closePageByRouteKey("New Dynamic Model")
+        else:
+            self.widgetWindows._closePageByRouteKey(pageRouteKey)
 
     def initNavigation(self):
         """初始化左侧导航栏"""

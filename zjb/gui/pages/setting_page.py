@@ -90,7 +90,7 @@ class SettingInterface(ScrollArea):
         """绑定槽函数"""
         cfg.themeChanged.connect(self.__onThemeChanged)
         self.themeColorCard.colorChanged.connect(setThemeColor)
-        self.micaCard.checkedChanged.connect(GLOBAL_SIGNAL.micaEnableChanged)
+        self.micaCard.checkedChanged.connect(GLOBAL_SIGNAL.micaEnableChanged.emit)
 
     def __onThemeChanged(self, theme):
         """主题修改槽函数"""

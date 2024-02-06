@@ -1,10 +1,20 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QWidget
-from qfluentwidgets import (BodyLabel, MessageBoxBase, SmoothScrollArea,
-                            TitleLabel, TransparentPushButton)
-from zjb.main.api import (AnalysisResult, Connectivity, RegionalTimeSeries,
-                          SimulationResult, Surface)
+from qfluentwidgets import (
+    BodyLabel,
+    MessageBoxBase,
+    SmoothScrollArea,
+    TitleLabel,
+    TransparentPushButton,
+)
 
+from zjb.main.api import (
+    AnalysisResult,
+    Connectivity,
+    RegionalTimeSeries,
+    SimulationResult,
+    Surface,
+)
 from .._global import GLOBAL_SIGNAL, get_workspace
 from ..pages.analysis_page import AnalysisPage
 from ..pages.connectivity_page import ConnectivityPage
@@ -112,10 +122,23 @@ class ChooseAnalysisDialog(MessageBoxBase):
         self.scrollLayout = QFormLayout(self.scrollWidget)
         self.scrollLayout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
+        # 查找项目中现有关联该数据的分析
         for data in self.project.data:
-            if self.data in data.origin:
+            if isinstance(data, AnalysisResult) and self.data in data.origin:
                 btn_existe = self._create_data_button(data.name, data)
                 self.scrollLayout.addRow(btn_existe)
+
+        for dtb in self.project.available_dtbs():
+            for key, value in dtb.data.items():
+                if isinstance(value, AnalysisResult) and self.data in value.origin:
+                    btn_existe = self._create_data_button(key, value)
+                    self.scrollLayout.addRow(btn_existe)
+
+        for subject in self.project.available_subjects():
+            for key, value in subject.data.items():
+                if isinstance(value, AnalysisResult) and self.data in value.origin:
+                    btn_existe = self._create_data_button(key, value)
+                    self.scrollLayout.addRow(btn_existe)
 
         btn_add_new_analysis = TransparentPushButton("New Analysis")
         btn_add_new_analysis.clicked.connect(self._click_new_analysis)

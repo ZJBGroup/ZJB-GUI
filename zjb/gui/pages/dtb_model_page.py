@@ -49,6 +49,14 @@ from .base_page import BasePage
 from .dynamics_page import DynamicsInformationPage
 
 
+def is_float(str):
+    try:
+        float(str)
+        return True
+    except ValueError:
+        return False
+
+
 class DTBModelPage(BasePage):
     def __init__(self, model: DTBModel):
         super().__init__(model._gid.str, model.name, FluentIcon.IOT)
@@ -145,9 +153,20 @@ class DTBModelPage(BasePage):
         # parameters
         self.scrollLayout.addWidget(SubtitleLabel("Parameter value:"))
         for parameter in dynamics.parameters:
-            editor = FloatEditor(
-                self.model.parameters.get(parameter, dynamics.parameters[parameter])
+            _value = self.model.parameters.get(
+                parameter, dynamics.parameters[parameter]
             )
+            if not is_float(
+                str(
+                    self.model.parameters.get(parameter, dynamics.parameters[parameter])
+                )
+            ):
+                _text = self.getStimulationText(_value)
+            else:
+                _text = self.model.parameters.get(
+                    parameter, dynamics.parameters[parameter]
+                )
+            editor = FloatEditor(_text)
             editor.valueChanged.connect(partial(self._edit_parameter, parameter))
             mylabel = BodyLabel(expression2unicode(parameter, False) + ":")
             mylabel.installEventFilter(
@@ -157,8 +176,8 @@ class DTBModelPage(BasePage):
                 mylabel.setToolTip(dynamics.docs[parameter])
             self.scrollLayout.addRow(mylabel, editor)
         # stimulation
-        self.stimulationPanel = StimulationPanel(self.model)
-        self.scrollLayout.addRow(BodyLabel("stimulation:"), self.stimulationPanel)
+        # self.stimulationPanel = StimulationPanel(self.model)
+        # self.scrollLayout.addRow(BodyLabel("stimulation:"), self.stimulationPanel)
         # solver
         self.scrollLayout.addWidget(SubtitleLabel("Simulation configuration:"))
         solver_editor = ModelSolverEditor(self.model)
@@ -227,7 +246,8 @@ class DTBModelPage(BasePage):
                     space=_stimulus_data["space"],
                 )
             self.addStimulationToModel(_getdata["param"], _stimulation)
-            self.stimulationPanel.addStimulationToPanel(_getdata["param"], _stimulation)
+            # self.stimulationPanel.addStimulationToPanel(_getdata["param"], _stimulation)
+            self.addStimulationToPanel(_getdata["param"], _stimulation)
 
     def addStimulationToModel(self, param, stimulation):
         """将刺激添加到 DTB Model 中
@@ -243,44 +263,8 @@ class DTBModelPage(BasePage):
         _temp.update({param: stimulation})
         self.model.parameters = _temp
 
-
-class InputWidget(QWidget):
-    """添加刺激空间分布的条目"""
-
-    deleteItemSignal = pyqtSignal(QWidget)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._inputBox = LineEdit(self)
-        self._inputBox.setDisabled(True)
-        self._inputBox.setMinimumWidth(200)
-        self._btn = TransparentToolButton(FluentIcon.DELETE)
-        self._btn.clicked.connect(self.deleteItem)
-        self.layout = QHBoxLayout(self)
-        self.layout.addWidget(self._inputBox)
-        self.layout.addWidget(self._btn)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
-    def setText(self, text):
-        self._inputBox.setText(text)
-
-    def deleteItem(self):
-        self.deleteItemSignal.emit(self)
-
-
-class StimulationPanel(QWidget):
-    """刺激板块"""
-
-    def __init__(self, model: DTBModel, parent=None):
-        super().__init__(parent)
-        self._model = model
-        self.formLayout = QFormLayout(self)
-        self.formLayout.setContentsMargins(0, 0, 0, 0)
-        for k, v in self._model.parameters.items():
-            self.addStimulationToPanel(k, v)
-
     def addStimulationToPanel(self, param, stimulation):
-        """将刺激添加到面板中
+        """将刺激同步到GUI中
 
         Parameters
         ----------
@@ -289,7 +273,22 @@ class StimulationPanel(QWidget):
         stimulation : GaussianStimulus | NCyclePulseStimulus | PulseStimulus | SinusoidStimulus
             一个刺激的实例
         """
-        _text = ""
+        for i in range(self.scrollLayout.count()):
+            if isinstance(
+                self.scrollLayout.itemAt(i).widget(), BodyLabel
+            ) and expression2unicode(
+                self.scrollLayout.itemAt(i).widget().text().replace(":", "")
+            ) == expression2unicode(
+                param
+            ):
+                index = i
+                break
+        self.scrollLayout.itemAt(index + 1).widget().setValue(
+            self.getStimulationText(stimulation)
+        )
+
+    def getStimulationText(self, stimulation):
+        """根据刺激类型，返回显示的文本"""
         if isinstance(stimulation, GaussianStimulus):
             _text = str(
                 f"GaussianStimulus: amp = {stimulation.amp},mu={stimulation.mu},sigma={stimulation.sigma},offset={stimulation.offset},space=<list>"
@@ -306,57 +305,7 @@ class StimulationPanel(QWidget):
             _text = str(
                 f"SinusoidStimulus: amp = {stimulation.amp},freq={stimulation.freq},phase={stimulation.phase},offset={stimulation.offset},space=<list>"
             )
-        else:
-            _text = f"{stimulation.__class__.__name__}:{str(stimulation)}"
-        # 判断是否已经有对应参数的刺激
-        index = -1
-        for i in range(self.formLayout.count()):
-            if isinstance(
-                self.formLayout.itemAt(i).widget(), BodyLabel
-            ) and self.formLayout.itemAt(i).widget().text().replace(
-                ":", ""
-            ) == expression2unicode(
-                param
-            ):
-                index = i
-                break
-        if not index == -1:
-            self.formLayout.itemAt(i + 1).widget().setText(_text)
-        else:
-            cont = InputWidget(self)
-            cont.deleteItemSignal.connect(self.deleteStimulation)
-            cont.setText(_text)
-            mylabel = BodyLabel(expression2unicode(param, False) + ":")
-            self.formLayout.addRow(mylabel, cont)
-
-    def deleteStimulation(self, widget: InputWidget):
-        """删除一个刺激条目
-
-        Parameters
-        ----------
-        widget : InputWidget
-            不包含label的一个 widget
-        """
-        index = 0
-        for i in range(self.formLayout.count()):
-            if self.formLayout.itemAt(i).widget() == widget:
-                index = i
-                break
-        _label = self.formLayout.itemAt(index - 1).widget()
-        _param_name = _label.text().replace(":", "")
-        _editor = self.formLayout.itemAt(index).widget()
-        self.formLayout.removeWidget(_label)
-        self.formLayout.removeWidget(_editor)
-        _label.deleteLater()
-        _editor.deleteLater()
-        # 删除模型中对应的刺激
-        _stimulation = self._model.parameters
-        for k, _ in _stimulation.items():
-            if expression2unicode(k) == expression2unicode(_param_name):
-                _key = k
-                break
-        del _stimulation[_key]
-        self._model.parameters = _stimulation
+        return _text
 
 
 class ModelSolverEditor(InstanceEditor[Solver]):

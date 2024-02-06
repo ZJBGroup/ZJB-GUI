@@ -209,7 +209,7 @@ class MainWindow(FluentWindow):
         self.settingPage = SettingInterface(self)
         self.aboutUsPage = AboutUsInterface(self)
         # 禁用 win11 的 Mica 特效
-        self.setMicaEffectEnabled(True)
+        self.setMicaEffectEnabled(False)
 
         self.initNavigation()
 
@@ -217,6 +217,7 @@ class MainWindow(FluentWindow):
         GLOBAL_SIGNAL.requestAddPage.connect(self.addPage)
         GLOBAL_SIGNAL.micaEnableChanged.connect(self.setMicaEffectEnabled)
         GLOBAL_SIGNAL.dynamicModelUpdate.connect(self.closePageByRouteKey)
+        GLOBAL_SIGNAL.stimulationSpaceCreated.connect(self.closePageByRouteKey)
         cfg.themeChanged.connect(
             lambda: self.windowicon.setIcon(
                 QIcon(find_resource_file("icon/logo_white_smaller.png"))

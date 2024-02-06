@@ -352,7 +352,7 @@ class StimulationPanel(QWidget):
         # 删除模型中对应的刺激
         _stimulation = self._model.parameters
         for k, _ in _stimulation.items():
-            if expression2unicode(k) == _param_name:
+            if expression2unicode(k) == expression2unicode(_param_name):
                 _key = k
                 break
         del _stimulation[_key]

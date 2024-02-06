@@ -41,7 +41,7 @@ class NewDynamicsPage(BasePage):
                 self.select_dynamicsModel = dynamicsModel
                 break
         if self.select_dynamicsModel:
-            self.set_format_date(self.select_dynamicsModel)
+            self.set_format_data(self.select_dynamicsModel)
 
     def _setup_ui(self):
         self.vBoxLayout = QVBoxLayout(self)
@@ -104,7 +104,7 @@ class NewDynamicsPage(BasePage):
         self.scrollLayout.addRow(self.finish_btn)
         self.vBoxLayout.addWidget(self.scrollArea)
 
-    def set_format_date(self, dynamic: DynamicsModel):
+    def set_format_data(self, dynamic: DynamicsModel):
         """拿到动力学模型中的数据，格式化之后回显到列表中
 
         Parameters
@@ -163,16 +163,16 @@ class NewDynamicsPage(BasePage):
                 self._window,
             )
             return
-        model_dict["state_variables"] = self.get_format_date(
+        model_dict["state_variables"] = self.get_format_data(
             self.state_variables_editor.getValue(), "state_variables"
         )
-        model_dict["coupling_variables"] = self.get_format_date(
+        model_dict["coupling_variables"] = self.get_format_data(
             self.coupling_variables_editor.getValue(), "coupling_variables"
         )
-        model_dict["transient_variables"] = self.get_format_date(
+        model_dict["transient_variables"] = self.get_format_data(
             self.transient_variables_editor.getValue(), "transient_variables"
         )
-        parameters_data = self.get_format_date_parameters(
+        parameters_data = self.get_format_data_parameters(
             self.parameters_editor.getValue()
         )
         if parameters_data[0] == "error":
@@ -198,7 +198,7 @@ class NewDynamicsPage(BasePage):
         show_success(f"Successfully created model:{model_dict['name']}", self._window)
         GLOBAL_SIGNAL.dynamicModelUpdate.emit(model_dict["name"], "create")
 
-    def get_format_date(self, data, type=None) -> dict:
+    def get_format_data(self, data, type=None) -> dict:
         """将表单收到的 state_variables coupling_variables
         transient_variables 数据格式化成与模板匹配的格式
 
@@ -229,7 +229,7 @@ class NewDynamicsPage(BasePage):
                     dict.update({item[0]: TransientVariable(expression=item[1])})
         return dict
 
-    def get_format_date_parameters(self, data) -> list:
+    def get_format_data_parameters(self, data) -> list:
         """将变量、变量的值及变量的说明格式化成模板
 
         Parameters

@@ -24,7 +24,10 @@ class _GlobalSignal(QObject):
     micaEnableChanged = pyqtSignal(bool)
 
     # dynamics 更新信号 第一个routekey 第二个为type
-    dynamicModelUpdate = pyqtSignal(str, str)
+    dynamicModelUpdate = pyqtSignal(str, object)
+
+    # 创建刺激的空间分布信号
+    stimulationSpaceCreated = pyqtSignal(str, list)
 
 
 GLOBAL_SIGNAL = _GlobalSignal()

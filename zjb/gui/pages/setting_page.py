@@ -39,7 +39,7 @@ class SettingInterface(ScrollArea):
             cfg.micaEnabled,
             self.personalGroup,
         )
-        self.micaCard.setChecked(True)
+        self.micaCard.setChecked(False)
 
         # 应用主题
         self.themeCard = OptionsSettingCard(

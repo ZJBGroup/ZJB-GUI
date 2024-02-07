@@ -1,20 +1,17 @@
 from functools import partial
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
     IconWidget,
-    LineEdit,
-    PrimaryPushButton,
     SmoothScrollArea,
     SubtitleLabel,
     TitleLabel,
     ToolTipFilter,
     ToolTipPosition,
     TransparentPushButton,
-    TransparentToolButton,
 )
 
 from zjb.main.api import (
@@ -120,18 +117,7 @@ class DTBModelPage(BasePage):
         self.detail_button_layout.addWidget(btn_dynamics)
         self.detail_panel_layout.addWidget(self.detail_button_container)
 
-        # 按钮组
-        self.button_group = QWidget(self)
-        self.button_group_layout = QHBoxLayout(self.button_group)
-        self.button_group_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.button_group_layout.setContentsMargins(0, 20, 0, 0)
-        btn_stimulation = PrimaryPushButton(f"stimulation")
-        btn_stimulation.setFixedWidth(130)
-        btn_stimulation.clicked.connect(self._stimulation_dialog)
-        self.button_group_layout.addWidget(btn_stimulation)
-
         # 添加到布局中
-        self.detail_panel_layout.addWidget(self.button_group)
         self.info_panel_layout.addWidget(self.detail_panel)
         self.vBoxLayout.addWidget(self.info_panel)
         self.vBoxLayout.addWidget(SubtitleLabel(f"Detail:"))
@@ -152,15 +138,15 @@ class DTBModelPage(BasePage):
             )
         # parameters
         self.scrollLayout.addWidget(SubtitleLabel("Parameter value:"))
+        btn_stimulation = TransparentPushButton(f"Add stimulation", icon=FluentIcon.ADD)
+        btn_stimulation.setFixedWidth(200)
+        btn_stimulation.clicked.connect(self._stimulation_dialog)
+        self.scrollLayout.addWidget(btn_stimulation)
         for parameter in dynamics.parameters:
             _value = self.model.parameters.get(
                 parameter, dynamics.parameters[parameter]
             )
-            if not is_float(
-                str(
-                    self.model.parameters.get(parameter, dynamics.parameters[parameter])
-                )
-            ):
+            if not is_float(str(_value)):
                 _text = self.getStimulationText(_value)
             else:
                 _text = self.model.parameters.get(
@@ -175,9 +161,6 @@ class DTBModelPage(BasePage):
             if dynamics.docs:
                 mylabel.setToolTip(dynamics.docs[parameter])
             self.scrollLayout.addRow(mylabel, editor)
-        # stimulation
-        # self.stimulationPanel = StimulationPanel(self.model)
-        # self.scrollLayout.addRow(BodyLabel("stimulation:"), self.stimulationPanel)
         # solver
         self.scrollLayout.addWidget(SubtitleLabel("Simulation configuration:"))
         solver_editor = ModelSolverEditor(self.model)
@@ -246,7 +229,6 @@ class DTBModelPage(BasePage):
                     space=_stimulus_data["space"],
                 )
             self.addStimulationToModel(_getdata["param"], _stimulation)
-            # self.stimulationPanel.addStimulationToPanel(_getdata["param"], _stimulation)
             self.addStimulationToPanel(_getdata["param"], _stimulation)
 
     def addStimulationToModel(self, param, stimulation):

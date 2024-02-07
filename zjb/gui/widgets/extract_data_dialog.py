@@ -8,8 +8,8 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentPushButton,
 )
-
 from zjb.main.api import DTB, Project, Subject
+
 from .input_name_dialog import EntityCreationBase, SelectWidget
 from .._global import get_workspace
 
@@ -242,7 +242,8 @@ class SimulationResultDialog(MessageBoxBase):
         monitor_type_list = []
         monitor_variable_list = []
         for monitor in self.dtb.model.monitors:
-            monitor_type_list.append(monitor.__class__.__name__)
+            if monitor.__class__.__name__ not in monitor_type_list:
+                monitor_type_list.append(monitor.__class__.__name__)
             monitor_variable_list.append(monitor.expression)
 
         self.monitor_type_selector = SelectWidget("Type", dataList=monitor_type_list)
@@ -306,13 +307,15 @@ class SimulationResultDialog(MessageBoxBase):
 
     def _on_monitor_variable_selector_changed(self):
         """pass"""
-        index = 0
-        timeseries_list = []
-        for monitor in self.dtb.model.monitors:
-            if monitor.expression == self.monitor_type_selector.getCurrentValue():
-                timeseries_list.append(self.data.data[index])
-            index += 1
-        self.timeseries_selector.updateSelectList(timeseries_list)
+        # index = 0
+        # timeseries_list = []
+        # for monitor in self.dtb.model.monitors:
+        #     if monitor.expression == self.monitor_type_selector.getCurrentValue():
+        #         timeseries_list.append(self.data.data[index])
+        #     index += 1
+        # self.timeseries_selector.updateSelectList(timeseries_list)
+
+        self._on_timeseries_list_changed()
 
     def submit_date(self, str):
         self.flag = str

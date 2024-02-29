@@ -108,9 +108,9 @@ class ValueItem(CardWidget):
     def __init__(self, valuelist, parent=None):
         super().__init__(parent)
         self.setFixedWidth(250)
-        self._num = valuelist[0]
+        self._num = str(valuelist[0])
         self._region = valuelist[1]
-        self._value = valuelist[4]
+        self._value = str(valuelist[4])
         self.numlabel = BodyLabel(self._num)
         self.numlabel.setFixedWidth(30)
         self.regionlabel = BodyLabel(f"{self._region}:")

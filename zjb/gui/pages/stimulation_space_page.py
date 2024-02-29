@@ -23,10 +23,11 @@ def format_value(val: float):
 class StimulationSpacePage(BasePage):
     currentRegionClicked = pyqtSignal(int)
 
-    def __init__(self, atlas: Atlas, subject: Subject):
+    def __init__(self, atlas: Atlas, subject: Subject, edit_space: list):
         super().__init__("stimulation_space", "stimulation_space", FluentIcon.EDUCATION)
         self.atlas = atlas
         self.subject = subject
+        self.edit_space = edit_space
         self._setup_ui()
 
     def _setup_ui(self):
@@ -65,6 +66,28 @@ class StimulationSpacePage(BasePage):
             self.deleteViewValue
         )
         self.value_panel.create_btn.clicked.connect(self.create_stimulation_space)
+
+        if self.edit_space:
+            self.regions_list = []
+            for _, value in self.atlas.subregions.items():
+                for _, _value in value.items():
+                    for _k, _ in _value.items():
+                        self.regions_list.append(_k)
+            self.edit_view()
+
+    def edit_view(self):
+        """回显空间布局"""
+        for index in range(len(self.edit_space)):
+            if self.edit_space[index] != 0.0:
+                info = [
+                    index + 1,  # 脑区编号
+                    self.regions_list[index],  # 脑区名称
+                    None,
+                    None,
+                    self.edit_space[index],  # 色值
+                ]
+                self.addValueToView(info)
+                self.value_panel.addStimulation(info)
 
     def create_stimulation_space(self):
         """点击 create 按钮，创建刺激的空间分布"""

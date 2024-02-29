@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -5,11 +6,19 @@ from qfluentwidgets import (
     FluentIcon,
     LineEdit,
     MessageBoxBase,
+    PushButton,
     SubtitleLabel,
     TransparentToolButton,
 )
 
-from zjb.main.api import Atlas, DTBModel
+from zjb.main.api import (
+    Atlas,
+    DTBModel,
+    GaussianStimulus,
+    NCyclePulseStimulus,
+    PulseStimulus,
+    SinusoidStimulus,
+)
 from zjb.main.dtb.utils import expression2unicode
 
 from .._global import GLOBAL_SIGNAL, get_workspace
@@ -53,7 +62,16 @@ class GaussianForm(BaseForm):
         self.offsetEdit.setText("0")
         self.formLayout.addRow(BodyLabel("offset:"), self.offsetEdit)
 
+    def setFormValue(self, data):
+        """设置表单数据"""
+        [value1, value2, value3, value4] = data
+        self.ampEdit.setText(str(value1))
+        self.muEdit.setText(str(value2))
+        self.sigmaEdit.setText(str(value3))
+        self.offsetEdit.setText(str(value4))
+
     def getFormData(self):
+        """获取表单数据"""
         if (
             is_float(self.ampEdit.text())
             and is_float(self.muEdit.text())
@@ -90,7 +108,15 @@ class PulseForm(BaseForm):
         self.widthEdit.setText("1")
         self.formLayout.addRow(BodyLabel("width:"), self.widthEdit)
 
+    def setFormValue(self, data):
+        """设置表单数据"""
+        [value1, value2, value3] = data
+        self.ampEdit.setText(str(value1))
+        self.startEdit.setText(str(value2))
+        self.widthEdit.setText(str(value3))
+
     def getFormData(self):
+        """获取表单数据"""
         if (
             is_float(self.ampEdit.text())
             and is_float(self.startEdit.text())
@@ -121,7 +147,17 @@ class NCyclePulseForm(PulseForm):
         self.countEdit.setText("0")
         self.formLayout.addRow(BodyLabel("count:"), self.countEdit)
 
+    def setFormValue(self, data):
+        """设置表单数据"""
+        [value1, value2, value3, value4, value5] = data
+        self.ampEdit.setText(str(value1))
+        self.startEdit.setText(str(value2))
+        self.widthEdit.setText(str(value3))
+        self.periodEdit.setText(str(value4))
+        self.countEdit.setText(str(value5))
+
     def getFormData(self):
+        """获取表单数据"""
         if (
             is_float(self.ampEdit.text())
             and is_float(self.startEdit.text())
@@ -164,7 +200,16 @@ class SinusoidForm(BaseForm):
         self.offsetEdit.setText("0")
         self.formLayout.addRow(BodyLabel("offset:"), self.offsetEdit)
 
+    def setFormValue(self, data):
+        """设置表单数据"""
+        [value1, value2, value3, value4] = data
+        self.ampEdit.setText(str(value1))
+        self.freqEdit.setText(str(value2))
+        self.phaseEdit.setText(str(value3))
+        self.offsetEdit.setText(str(value4))
+
     def getFormData(self):
+        """获取表单数据"""
         if (
             is_float(self.ampEdit.text())
             and is_float(self.freqEdit.text())
@@ -194,6 +239,7 @@ class SpaceInputWidget(QWidget):
         self._atlas = atlas
         self._workspace = get_workspace()
         self._subject = None
+        self._edit_space = None
         self._inputBox = LineEdit(self)
         self._inputBox.setDisabled(True)
         self._inputBox.setClearButtonEnabled(True)
@@ -216,30 +262,39 @@ class SpaceInputWidget(QWidget):
                     self._subject = subject
                     break
 
+        if self._edit_space:
+            self._btn.setIcon(FluentIcon.EDIT)
+
     def btnclick(self):
         GLOBAL_SIGNAL.requestAddPage.emit(
             "stimulation",
-            lambda _: StimulationSpacePage(self._atlas, self._subject),
+            lambda _: StimulationSpacePage(
+                self._atlas, self._subject, self._edit_space
+            ),
         )
-
-    def gettext(self):
-        """获取输入框中的值"""
-        return self._inputBox.text()
 
     def settext(self, _str):
         """往输入框中输入值"""
         self._inputBox.setText(_str)
 
+    def setspace(self, spacelist: list):
+        """设置编辑回显的空间分布列表"""
+        self._edit_space = spacelist
+        self._btn.setIcon(FluentIcon.EDIT)
+
 
 class StimulationDialog(MessageBoxBase):
     """添加刺激得弹窗的弹窗"""
 
-    def __init__(self, title: str, atlas: Atlas, model: DTBModel, parent=None):
+    deleteStimulationSignal = pyqtSignal(str)
+
+    def __init__(self, title: str, atlas: Atlas, model: DTBModel, data, parent=None):
         super().__init__(parent=parent)
         self.flag = ""
         self._space_value = None
         self._atlas = atlas
         self._model = model
+        self._edit_data = data  # 回显数据
         self.titleLabel = SubtitleLabel(title)
         self.titleLabel.setContentsMargins(0, 0, 0, 20)
         self.viewLayout.addWidget(self.titleLabel)
@@ -261,9 +316,9 @@ class StimulationDialog(MessageBoxBase):
         self.spaceEdit = SpaceInputWidget(self._atlas, self)
         self.formLayout.addRow(BodyLabel("Space:"), self.spaceEdit)
         # 参数下拉框
-        param_select_list = [key for key in self._model.dynamics.parameters]
+        self.param_select_list = [key for key in self._model.dynamics.parameters]
         self.param_comboBox = ComboBox(self)
-        for item in param_select_list:
+        for item in self.param_select_list:
             self.param_comboBox.addItem(
                 str(expression2unicode(item, False)), userData=item
             )
@@ -273,6 +328,71 @@ class StimulationDialog(MessageBoxBase):
         self.yesButton.clicked.connect(lambda: self.submit_date("ok"))
         self.cancelButton.clicked.connect(lambda: self.submit_date("canel"))
         GLOBAL_SIGNAL.stimulationSpaceCreated.connect(self.setSpaceValue)
+
+        if self._edit_data:
+            self.editView(self._edit_data)
+            self.param_comboBox.setDisabled(True)  # 禁用参数框
+
+            self.del_btn = PushButton("Delete", icon=FluentIcon.DELETE)
+            self.del_btn.setObjectName("del_btn")
+            self.del_btn.clicked.connect(self.deleteStimulation)
+            self.formLayout.addRow(self.del_btn)
+
+    def deleteStimulation(self):
+        """点击删除按钮"""
+        self.deleteStimulationSignal.emit(self._edit_data[0])
+        self.close()
+
+    def editView(self, _data):
+        """编辑数据回显
+
+        Parameters
+        ----------
+        _data : list
+            长度为2 第一个为参数，第二个为刺激
+        """
+        [_param, _stimulus] = _data
+        # 参数回显
+        i = 0
+        for _item in self.param_select_list:
+            if _item == _param:
+                break
+            i = i + 1
+        self.param_comboBox.setCurrentIndex(i)
+        # 刺激类型及对应刺激参数回显
+        if isinstance(_stimulus, GaussianStimulus):
+            self.type_comboBox.setCurrentIndex(0)
+            self._updateForm()
+            self.formWidget.setFormValue(
+                [_stimulus.amp, _stimulus.mu, _stimulus.sigma, _stimulus.offset]
+            )
+        elif isinstance(_stimulus, NCyclePulseStimulus):
+            self.type_comboBox.setCurrentIndex(1)
+            self._updateForm()
+            self.formWidget.setFormValue(
+                [
+                    _stimulus.amp,
+                    _stimulus.start,
+                    _stimulus.width,
+                    _stimulus.period,
+                    _stimulus.count,
+                ]
+            )
+        elif isinstance(_stimulus, PulseStimulus):
+            self.type_comboBox.setCurrentIndex(2)
+            self._updateForm()
+            self.formWidget.setFormValue(
+                [_stimulus.amp, _stimulus.start, _stimulus.width]
+            )
+        elif isinstance(_stimulus, SinusoidStimulus):
+            self.type_comboBox.setCurrentIndex(3)
+            self._updateForm()
+            self.formWidget.setFormValue(
+                [_stimulus.amp, _stimulus.freq, _stimulus.phase, _stimulus.offset]
+            )
+        # 空间分布回显
+        self.setSpaceValue(None, spacelist=list(_stimulus.space))
+        self.spaceEdit.setspace(list(_stimulus.space))
 
     def _updateForm(self):
         """根据刺激类型更新动态表单"""
@@ -297,6 +417,7 @@ class StimulationDialog(MessageBoxBase):
         """
         self._space_value = spacelist
         self.spaceEdit.settext(str(type(spacelist)))
+        self.spaceEdit.setspace(spacelist)
 
     def getData(self):
         """根据用户输入的值，建立一个刺激对象并返回"""

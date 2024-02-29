@@ -1,11 +1,12 @@
 from functools import partial
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
     IconWidget,
+    PushButton,
     SmoothScrollArea,
     SubtitleLabel,
     TitleLabel,
@@ -46,9 +47,10 @@ from .base_page import BasePage
 from .dynamics_page import DynamicsInformationPage
 
 
-def is_float(str):
+def is_float(value):
+    str_value = str(value)
     try:
-        float(str)
+        float(str_value)
         return True
     except ValueError:
         return False
@@ -142,25 +144,36 @@ class DTBModelPage(BasePage):
         btn_stimulation.setFixedWidth(200)
         btn_stimulation.clicked.connect(self._stimulation_dialog)
         self.scrollLayout.addWidget(btn_stimulation)
+        self.setStyleSheet(
+            "PushButton{text-align: left;} TransparentPushButton{text-align: center;} PrimaryPushButton{text-align: center;} PushButton#del_btn{text-align: center;}"
+        )
         for parameter in dynamics.parameters:
             _value = self.model.parameters.get(
                 parameter, dynamics.parameters[parameter]
             )
-            if not is_float(str(_value)):
+            if not is_float(_value):
+                # 刺激信息
                 _text = self.getStimulationText(_value)
+                _editor = ParamEditor(_text, parameter, stimulus=_value)
+                _editor.setStimulusMode()
             else:
+                # 非刺激值
                 _text = self.model.parameters.get(
                     parameter, dynamics.parameters[parameter]
                 )
-            editor = FloatEditor(_text)
-            editor.valueChanged.connect(partial(self._edit_parameter, parameter))
+                _editor = ParamEditor(_text, parameter)
+                _editor.setFloatMode()
+            _editor.addClickedSignal.connect(self._stimulation_dialog)
+            _editor.inputwidget.valueChanged.connect(
+                partial(self._edit_parameter, parameter)
+            )
             mylabel = BodyLabel(expression2unicode(parameter, False) + ":")
             mylabel.installEventFilter(
                 ToolTipFilter(mylabel, 200, ToolTipPosition.LEFT)
             )
             if dynamics.docs:
                 mylabel.setToolTip(dynamics.docs[parameter])
-            self.scrollLayout.addRow(mylabel, editor)
+            self.scrollLayout.addRow(mylabel, _editor)
         # solver
         self.scrollLayout.addWidget(SubtitleLabel("Simulation configuration:"))
         solver_editor = ModelSolverEditor(self.model)
@@ -185,8 +198,18 @@ class DTBModelPage(BasePage):
     def _edit_parameter(self, name: str, value):
         self.model.parameters |= {name: value}
 
-    def _stimulation_dialog(self):
-        w = StimulationDialog("Add Stimulation", self.model.atlas, self.model, self)
+    def _stimulation_dialog(self, data=None):
+        """新增、编辑刺激弹窗
+
+        Parameters
+        ----------
+        data : list , optional
+            长度为2 第一个为参数，第二个为刺激
+        """
+        w = StimulationDialog(
+            "Add Stimulation", self.model.atlas, self.model, data, self
+        )
+        w.deleteStimulationSignal.connect(self.deleteStimulation)
         w.exec()
         _getdata = None
         if w.getflag() == "ok":
@@ -231,6 +254,17 @@ class DTBModelPage(BasePage):
             self.addStimulationToModel(_getdata["param"], _stimulation)
             self.addStimulationToPanel(_getdata["param"], _stimulation)
 
+    def deleteStimulation(self, param):
+        """删除刺激的值,默认设置为0.0
+
+        Parameters
+        ----------
+        param : str
+            需要删除刺激的参数
+        """
+        self.addStimulationToModel(param, "0.0")
+        self.addStimulationToPanel(param, "0.0")
+
     def addStimulationToModel(self, param, stimulation):
         """将刺激添加到 DTB Model 中
 
@@ -238,22 +272,22 @@ class DTBModelPage(BasePage):
         ----------
         param : str
             添加刺激的参数名称
-        stimulation : GaussianStimulus | NCyclePulseStimulus | PulseStimulus | SinusoidStimulus
-            一个刺激的实例
+        stimulation : GaussianStimulus | NCyclePulseStimulus | PulseStimulus | SinusoidStimulus | float
+            一个刺激的实例或浮点值
         """
         _temp = self.model.parameters
         _temp.update({param: stimulation})
         self.model.parameters = _temp
 
     def addStimulationToPanel(self, param, stimulation):
-        """将刺激同步到GUI中
+        """将刺激或者值同步到GUI中
 
         Parameters
         ----------
         param : str
             添加刺激的参数名称
-        stimulation : GaussianStimulus | NCyclePulseStimulus | PulseStimulus | SinusoidStimulus
-            一个刺激的实例
+        stimulation : GaussianStimulus | NCyclePulseStimulus | PulseStimulus | SinusoidStimulus | float
+            一个刺激的实例或浮点值
         """
         for i in range(self.scrollLayout.count()):
             if isinstance(
@@ -265,9 +299,12 @@ class DTBModelPage(BasePage):
             ):
                 index = i
                 break
-        self.scrollLayout.itemAt(index + 1).widget().setValue(
-            self.getStimulationText(stimulation)
-        )
+        if is_float(stimulation):
+            self.scrollLayout.itemAt(index + 1).widget().setFloatValue(stimulation)
+        else:
+            self.scrollLayout.itemAt(index + 1).widget().setStimulus(
+                stimulation, self.getStimulationText(stimulation)
+            )
 
     def getStimulationText(self, stimulation):
         """根据刺激类型，返回显示的文本"""
@@ -288,6 +325,55 @@ class DTBModelPage(BasePage):
                 f"SinusoidStimulus: amp = {stimulation.amp},freq={stimulation.freq},phase={stimulation.phase},offset={stimulation.offset},space=<list>"
             )
         return _text
+
+
+class ParamEditor(QWidget):
+    addClickedSignal = pyqtSignal(object)
+    removeClickedSignal = pyqtSignal(QWidget)
+
+    def __init__(self, text, parameter, stimulus=None, parent=None):
+        super().__init__(parent)
+        self._parent = parent
+        self.param = parameter
+        self.stimulus = stimulus
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.hBoxLayout.setContentsMargins(0, 0, 0, 5)
+
+        self.inputwidget = FloatEditor(text)
+        self.stimuluswidget = PushButton(str(text))
+
+        self.hBoxLayout.addWidget(self.inputwidget)
+        self.hBoxLayout.addWidget(self.stimuluswidget)
+
+        self.stimuluswidget.clicked.connect(
+            lambda: self.addClickedSignal.emit([self.param, self.stimulus])
+        )
+
+    def getParam(self):
+        """获取控件绑定的参数值"""
+        return self.param
+
+    def setFloatMode(self):
+        """设置为浮点输入的显示模式"""
+        self.inputwidget.show()
+        self.stimuluswidget.hide()
+
+    def setStimulusMode(self):
+        """设置为刺激输入的显示模式"""
+        self.inputwidget.hide()
+        self.stimuluswidget.show()
+
+    def setFloatValue(self, value):
+        """设置数据框显示的内容"""
+        self.setFloatMode()
+        self.inputwidget.setText(str(value))
+
+    def setStimulus(self, value, text):
+        """绑定刺激值"""
+        self.setStimulusMode()
+        self.stimulus = value
+        self.stimuluswidget.setText(text)
 
 
 class ModelSolverEditor(InstanceEditor[Solver]):
